@@ -18,7 +18,7 @@ public class MeetingRooms {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long roomId;  // Meeting Room ID
+    private Long Id;  // Meeting Room ID
 
     private String name;  // Name of the meeting room
 
@@ -30,6 +30,8 @@ public class MeetingRooms {
     @OneToMany(mappedBy = "room")
     private List<Bookings> bookings;  // List of bookings for this room
 
-//    @OneToMany(mappedBy = "")
+
+
+//   @OneToMany(mappedBy = "user")
 //    private List<Users> users;  // List of users who have access to this room
 }
