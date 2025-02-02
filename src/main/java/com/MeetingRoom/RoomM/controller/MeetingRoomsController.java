@@ -1,40 +1,46 @@
 package com.MeetingRoom.RoomM.controller;
 
+import com.MeetingRoom.RoomM.dto.AddRoomRequestDTO;
 import com.MeetingRoom.RoomM.model.MeetingRooms;
-
 import com.MeetingRoom.RoomM.service.MeetingRoomsService;
-
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
+import com.MeetingRoom.RoomM.Utils.JwtUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/rooms")
+@RequestMapping("/meeting-room")
 public class MeetingRoomsController {
 
     private final MeetingRoomsService meetingRoomsService;
+    private final JwtUtil jwtUtil;
 
-    @Autowired
-    public MeetingRoomsController(MeetingRoomsService meetingRoomService) {
-        this.meetingRoomsService = meetingRoomService;
+    // Constructor injection for service and JwtUtil
+    public MeetingRoomsController(MeetingRoomsService meetingRoomsService, JwtUtil jwtUtil) {
+        this.meetingRoomsService = meetingRoomsService;
+        this.jwtUtil = jwtUtil;
     }
 
-    /**
-     * Endpoint to add a new meeting room.
-     *
-     * @param room The meeting room to be added.
-     * @return ResponseEntity with the saved meeting room and HTTP status.
-     */
+    // API to add a meeting room
     @PostMapping("/add")
-    public ResponseEntity<MeetingRooms> addRoom(@RequestBody MeetingRooms room) {
+    public ResponseEntity<MeetingRooms> addMeetingRoom(@RequestHeader("Authorization") String token,
+                                                       @RequestBody AddRoomRequestDTO addRoomRequestDTO) {
         try {
-            // Call service method to add the room
-            MeetingRooms savedRoom = meetingRoomsService.addRoom(room);
-            return new ResponseEntity<>(savedRoom, HttpStatus.CREATED);  // 201 - Created
-        } catch (IllegalArgumentException e) {
-            // Handle invalid input (e.g., missing room name)
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);  // 400 - Bad Request
+            // Extract email and role from the JWT token
+            String email = jwtUtil.extractEmail(token.substring(7)); // Remove "Bearer " from token
+            String role = jwtUtil.extractRole(token.substring(7));  // Extract the role from the token
+
+            // Check if the role is ADMIN
+            if (!role.equals("ADMIN")) {
+                return ResponseEntity.status(403).body(null);  // Forbidden if user is not admin
+            }
+
+            // Proceed to add the meeting room if the user is admin
+            MeetingRooms meetingRoom = meetingRoomsService.addMeetingRoom(addRoomRequestDTO);
+            return ResponseEntity.status(201).body(meetingRoom);  // Created response with the new meeting room
+
+        } catch (Exception e) {
+            // Handle any errors (e.g., invalid token or role extraction failure)
+            return ResponseEntity.status(403).body(null);  // Forbidden if token is invalid
         }
     }
 }

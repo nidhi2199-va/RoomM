@@ -18,17 +18,19 @@ public class MeetingRooms {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long Id;  // Meeting Room ID
+    private Long id;  // Meeting Room ID
 
     private String name;  // Name of the meeting room
 
     private int capacity;  // Room capacity
 
-    @ElementCollection
-    private List<String> equipment;  // List of equipment available in the room (Projector, Whiteboard, etc.)
-
-    @OneToMany(mappedBy = "room")
-    private List<Bookings> bookings;  // List of bookings for this room
+//    @ElementCollection
+//    @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
+//    @Column(name = "equipment")
+//    private List<String> equipmentList;  // List of equipment available in the room (Projector, Whiteboard, etc.)
+    private Boolean isAvailable = true;
+//    @OneToMany(mappedBy = "room")
+//    private List<Bookings> bookings;  // List of bookings for this room
 
 
 

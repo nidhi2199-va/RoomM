@@ -43,6 +43,22 @@ public class JwtUtil {
                 .getBody();
         return claimsResolver.resolve(claims);
     }
+    // Extract the role from the token
+    public String extractRole(String token) {
+        Claims claims = extractClaims(token);
+        return claims.get("role", String.class);  // Extract the role from the token
+    }
+
+    // Extract any claim from the token
+    private Claims extractClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+
 
     @FunctionalInterface
     public interface ClaimsResolver<T> {

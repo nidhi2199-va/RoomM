@@ -1,8 +1,8 @@
 package com.MeetingRoom.RoomM.service;
 
-import com.MeetingRoom.RoomM.model.MeetingRooms;
 import com.MeetingRoom.RoomM.dao.MeetingRoomsDao;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.MeetingRoom.RoomM.dto.AddRoomRequestDTO;
+import com.MeetingRoom.RoomM.model.MeetingRooms;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -10,24 +10,21 @@ public class MeetingRoomsService {
 
     private final MeetingRoomsDao meetingRoomsDao;
 
-    @Autowired
-    public MeetingRoomsService(MeetingRoomsDao meetingRoomRepository) {
-        this.meetingRoomsDao = meetingRoomRepository;
+    // Constructor injection for DAO
+    public MeetingRoomsService(MeetingRoomsDao meetingRoomsDao) {
+        this.meetingRoomsDao = meetingRoomsDao;
     }
 
-    /**
-     * Method to add a new room to the system.
-     *
-     * @param room The meeting room to be added.
-     * @return The saved meeting room entity.
-     */
-    public MeetingRooms addRoom(MeetingRooms room) {
-        // Perform any necessary validation (e.g., check if the room name is unique)
-        if (room.getName() == null || room.getName().isEmpty()) {
-            throw new IllegalArgumentException("Room name cannot be empty");
-        }
+    // Add Meeting Room Method (Modified to only accept AddRoomRequestDTO)
+    public MeetingRooms addMeetingRoom(AddRoomRequestDTO addRoomRequestDTO) {
+        // Create a new MeetingRooms entity from the DTO
+        MeetingRooms meetingRoom = new MeetingRooms();
+        meetingRoom.setName(addRoomRequestDTO.getName());
+        meetingRoom.setCapacity(addRoomRequestDTO.getCapacity());
+      //  meetingRoom.setEquipmentList(addRoomRequestDTO.getEquipmentList());
+        meetingRoom.setIsAvailable(addRoomRequestDTO.getIsAvailable());
 
-        // Save the room to the database
-        return meetingRoomsDao.save(room);
+        // Save the new room in the database
+        return meetingRoomsDao.save(meetingRoom);
     }
 }
