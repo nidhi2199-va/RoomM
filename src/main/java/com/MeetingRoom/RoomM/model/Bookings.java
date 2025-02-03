@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 @Entity
@@ -27,9 +28,9 @@ public class Bookings {
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false)
     private MeetingRooms room;
-    private LocalDate date;
-    private LocalTime startTime;
-    private LocalTime endTime;
+
+    private LocalDateTime startTime;
+    private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)
     private BookingStatus status;
