@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 @Transactional
 public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
-    @PersistenceContext
+
     private final EntityManager entityManager;
 
     @Autowired
@@ -35,10 +35,10 @@ public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
         return Optional.ofNullable(entityManager.find(MeetingRooms.class, id));
     }
 
-    @Override
-    public List<MeetingRooms> findAll() {
-        return entityManager.createQuery("SELECT m FROM MeetingRooms m", MeetingRooms.class).getResultList();
-    }
+//    @Override
+//    public List<MeetingRooms> findAll() {
+//        return entityManager.createQuery("SELECT m FROM MeetingRooms m", MeetingRooms.class).getResultList();
+//    }
 
     @Override
     public void deleteById(Long id) {

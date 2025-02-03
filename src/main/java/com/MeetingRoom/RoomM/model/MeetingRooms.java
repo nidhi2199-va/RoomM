@@ -24,7 +24,7 @@ public class MeetingRooms {
 
     private int capacity;  // Room capacity
 
-//    @ElementCollection
+    //    @ElementCollection
 //    @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
 //    @Column(name = "equipment")
 //    private List<String> equipmentList;  // List of equipment available in the room (Projector, Whiteboard, etc.)
