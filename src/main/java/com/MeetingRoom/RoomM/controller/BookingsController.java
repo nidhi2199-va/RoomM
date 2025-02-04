@@ -43,5 +43,11 @@ public class BookingsController {
                     .body(new CancelBookingResponseDTO(null, e.getMessage()));
         }
     }
+    // Endpoint to manually trigger the status update
+    @PostMapping("/update-status")
+    public ResponseEntity<String> updateBookingStatuses() {
+        bookingService.updateBookingsToCompleted();
+        return ResponseEntity.ok("Booking statuses updated to COMPLETED where applicable.");
+    }
 
 }

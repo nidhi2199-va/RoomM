@@ -27,7 +27,15 @@ public class BookingsDaoImpl implements BookingsDao {
             return entityManager.merge(booking);
         }
     }
-
+    @Override
+    public List<Bookings> findByStatusAndEndTimeBefore(BookingStatus status, LocalDateTime currentTime) {
+        // Write the custom query using entityManager if needed
+        String query = "SELECT b FROM Bookings b WHERE b.status = :status AND b.endTime < :currentTime";
+        return entityManager.createQuery(query, Bookings.class)
+                .setParameter("status", status)
+                .setParameter("currentTime", currentTime)
+                .getResultList();
+    }
 
     @Override
     public Optional<Bookings> findById(Long id) {

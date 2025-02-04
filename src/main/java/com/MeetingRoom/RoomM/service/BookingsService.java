@@ -11,6 +11,7 @@ import com.MeetingRoom.RoomM.model.Users;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class BookingsService {
     private final BookingsDao bookingRepository;
     private final MeetingRoomsDao meetingRoomRepository;
     private final UserDao userRepository;
+    private final BookingsDao bookingsDao;
 
     // Create a new booking and resolve time slot conflict
     public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO) {
@@ -35,7 +37,7 @@ public class BookingsService {
         long overlappingBookings = bookingRepository.countOverlappingBookings(bookingRequestDTO.getRoomId(),
                 bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime());
 
-        // If there's an overlap, throw a conflict exception (HTTP 409 Conflict)
+        // If there's an overlap, throw  a conflict exception (HTTP 409 Conflict)
         if (overlappingBookings > 0) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for the selected time slot!");
         }
@@ -53,7 +55,7 @@ public class BookingsService {
         booking.setUser(user);
         booking.setStartTime(bookingRequestDTO.getStartTime());
         booking.setEndTime(bookingRequestDTO.getEndTime());
-        booking.setStatus(BookingStatus.COMPLETED);  // Default to confirmed
+        booking.setStatus(BookingStatus.BOOKED);  // Default to confirmed
 
         // Save the booking in the repository
         Bookings savedBooking = bookingRepository.save(booking);
@@ -70,6 +72,7 @@ public class BookingsService {
                 savedBooking.getStatus()
         );
     }
+
 
     public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
         // Fetch booking
@@ -147,6 +150,22 @@ public class BookingsService {
 
         // Return success response
         return new CancelBookingResponseDTO(booking.getBookingId(), "Booking has been successfully canceled!");
+    }
+
+
+
+    public void updateBookingsToCompleted() {
+        // Get current time
+        LocalDateTime currentTime = LocalDateTime.now();
+
+        // Find all confirmed bookings that have ended
+        List<Bookings> bookings = bookingsDao.findByStatusAndEndTimeBefore(BookingStatus.COMPLETED, currentTime);
+
+        // Iterate through the bookings and update their status to COMPLETED
+        for (Bookings booking : bookings) {
+            booking.setStatus(BookingStatus.COMPLETED);
+            bookingsDao.save(booking);  // Save the updated booking
+        }
     }
 
 }
