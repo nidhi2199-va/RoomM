@@ -32,4 +32,6 @@ public interface BookingsDao {
 
     // Fetch all bookings within a specific time range
     List<Bookings> findBookingsWithinTimeRange(LocalDateTime startTime, LocalDateTime endTime);
+    //List<Bookings> findByMeetingRoomAndStatus(Long roomId, BookingStatus status);
+
 }

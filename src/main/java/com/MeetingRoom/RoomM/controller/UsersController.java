@@ -17,8 +17,12 @@ public class UsersController {
 
     // SignUp API (Using DTO - SignupRequest)
     @PostMapping("/signup")
-    public AuthResponseDTO signUp(@RequestBody SignupRequestDTO signupRequest) {
-        return authService.signup(signupRequest);
+    public ResponseEntity<String> signup(@RequestBody SignupRequestDTO signupRequestDTO) {
+        // Call the signup method from AuthService
+        String message = authService.signup(signupRequestDTO);
+
+        // Return success message
+        return ResponseEntity.ok(message);  // Return success message with HTTP 200 OK
     }
 
     @PostMapping("/login")

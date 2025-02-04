@@ -43,4 +43,5 @@ public class BookingsController {
                     .body(new CancelBookingResponseDTO(null, e.getMessage()));
         }
     }
+
 }

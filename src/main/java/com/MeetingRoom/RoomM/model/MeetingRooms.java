@@ -24,13 +24,13 @@ public class MeetingRooms {
 
     private int capacity;  // Room capacity
 
-    //    @ElementCollection
-//    @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
-//    @Column(name = "equipment")
-//    private List<String> equipmentList;  // List of equipment available in the room (Projector, Whiteboard, etc.)
-    private Boolean isAvailable = true;
-//    @OneToMany(mappedBy = "room")
-//    private List<Bookings> bookings;  // List of bookings for this room
+//       @ElementCollection
+//      @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
+//      @Column(name = "equipment")
+//      private List<String> equipmentList;  // List of equipment available in the room (Projector, Whiteboard, etc.)
+
+    @OneToMany(mappedBy = "room")
+    private List<Bookings> bookings;  // List of bookings for this room
 
 
 

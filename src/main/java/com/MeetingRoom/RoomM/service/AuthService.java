@@ -1,5 +1,6 @@
 package com.MeetingRoom.RoomM.service;
 
+import com.MeetingRoom.RoomM.Exceptions.UserAlreadyExistsException;
 import com.MeetingRoom.RoomM.dto.LoginRequestDTO;
 import com.MeetingRoom.RoomM.dto.SignupRequestDTO;
 import com.MeetingRoom.RoomM.model.Users;
@@ -23,12 +24,12 @@ public class AuthService {
     }
 
     // SignUp method for saving the user
-    public AuthResponseDTO signup(SignupRequestDTO signupRequestDTO) {
+    public String signup(SignupRequestDTO signupRequestDTO) {
         // Check if the user already exists with the given email
         Optional<Users> existingUser = userDao.findByEmail(signupRequestDTO.getEmail());
 
         if (existingUser.isPresent()) {
-            throw new RuntimeException("Email already exists");
+            throw new UserAlreadyExistsException("Email already exists");
         }
 
         // Create new user and set values
@@ -36,9 +37,7 @@ public class AuthService {
         String hashedPassword = BCrypt.hashpw(signupRequestDTO.getPassword(), BCrypt.gensalt());
         user.setPassword(hashedPassword);
         user.setEmail(signupRequestDTO.getEmail());
-        //user.setEmpId(signupRequestDTO.getEmpId());
         user.setPhone(signupRequestDTO.getPhoneNumber());
-
         user.setName(signupRequestDTO.getName());
         user.setRole(signupRequestDTO.getRole());
         user.setDepartment(signupRequestDTO.getDepartment());
@@ -46,11 +45,8 @@ public class AuthService {
         // Save the user to the database
         userDao.save(user);
 
-        // Generate JWT token after successful registration
-        String token = jwtUtil.generateToken(signupRequestDTO.getEmail());
-
-        // Return the response with the token
-        return new AuthResponseDTO(token);
+        // Return response without token
+        return "User is Registered Succesfully!!"; // Or return a custom response without the token
     }
 
     public AuthResponseDTO login(LoginRequestDTO loginRequestDTO) {
