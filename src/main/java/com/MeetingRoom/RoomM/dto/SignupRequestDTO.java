@@ -13,9 +13,19 @@ public class SignupRequestDTO {
 
  private String name;
  private String email;
- private String phoneNumber;
+ private String phone;
  private Department department;
  private Role role;
  private String password;
 
+ public String getPhoneNumber() {
+  return phone;
+ }
+
+ public void setPhoneNumber(String phone) {
+  this.phone = phone;
+ }
+ public void setPhone(String phone) {
+  this.phone = phone;
+ }
 }

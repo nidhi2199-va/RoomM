@@ -11,12 +11,12 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-//@CrossOrigin(origins = "http://localhost:3001")  // Allow only frontend origin
 public class UsersController {
 
     private final AuthService authService;
 
     // SignUp API (Using DTO - SignupRequest)
+    @CrossOrigin(origins = "http://localhost:5174")  // Allow cross-origin requests for this specific endpoint
     @PostMapping("/signup")
     public ResponseEntity<String> signup(@RequestBody SignupRequestDTO signupRequestDTO) {
         // Call the signup method from AuthService
@@ -26,8 +26,11 @@ public class UsersController {
         return ResponseEntity.ok(message);  // Return success message with HTTP 200 OK
     }
 
+    // Login API (Using DTO - LoginRequest)
+    @CrossOrigin(origins = "http://localhost:5174")  // Allow cross-origin requests for this specific endpoint
     @PostMapping("/login")
     public AuthResponseDTO logIn(@RequestBody LoginRequestDTO loginRequest) {
+        // Call the login method from AuthService to generate JWT Token
         return authService.login(loginRequest);
     }
 }
