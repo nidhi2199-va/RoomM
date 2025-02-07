@@ -2,8 +2,10 @@ package com.MeetingRoom.RoomM.dao;
 
 import com.MeetingRoom.RoomM.Enums.BookingStatus;
 import com.MeetingRoom.RoomM.model.Bookings;
+import com.MeetingRoom.RoomM.model.MeetingRooms;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Repository;
 
@@ -87,6 +89,54 @@ public class BookingsDaoImpl implements BookingsDao {
     @Override
     public List<Bookings> findBookingsWithinTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
         return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.startTime >= :startTime AND b.endTime <= :endTime", Bookings.class)
+                .setParameter("startTime", startTime)
+                .setParameter("endTime", endTime)
+                .getResultList();
+    }
+    @Override
+    public List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status) {
+        String jpql = "SELECT b FROM Bookings b WHERE b.room = :room AND b.status = :status";
+        TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
+        query.setParameter("room", room);
+        query.setParameter("status", status);
+        return query.getResultList();
+    }
+    @Override
+    public List<Bookings> findByStatusIn(List<BookingStatus> statuses) {
+        String jpql = "SELECT b FROM Bookings b WHERE b.status IN :statuses";
+        TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
+        query.setParameter("statuses", statuses);
+        return query.getResultList();
+    }
+
+    // Retrieve booking history for a specific user
+    @Override
+    public List<Bookings> findByUserIdAndStatusIn(Long userId, List<BookingStatus> statuses) {
+        String jpql = "SELECT b FROM Bookings b WHERE b.user.id = :userId AND b.status IN :statuses";
+        TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
+        query.setParameter("userId", userId);
+        query.setParameter("statuses", statuses);
+        return query.getResultList();
+    }
+
+    // Retrieve booking history for a specific room
+    @Override
+    public List<Bookings> findByRoomIdAndStatusIn(Long roomId, List<BookingStatus> statuses) {
+        String jpql = "SELECT b FROM Bookings b WHERE b.room.id = :roomId AND b.status IN :statuses";
+        TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
+        query.setParameter("roomId", roomId);
+        query.setParameter("statuses", statuses);
+        return query.getResultList();
+    }
+    @Override
+    public List<Bookings> findByRoomAndStatusAndTimeRange(MeetingRooms room, BookingStatus status, LocalDateTime startTime, LocalDateTime endTime) {
+        String jpql = "SELECT b FROM Bookings b WHERE b.room = :room " +
+                "AND b.status = :status " +
+                "AND ((b.startTime < :endTime) AND (b.endTime > :startTime))";  // Check for overlapping time slots
+
+        return entityManager.createQuery(jpql, Bookings.class)
+                .setParameter("room", room)
+                .setParameter("status", status)
                 .setParameter("startTime", startTime)
                 .setParameter("endTime", endTime)
                 .getResultList();

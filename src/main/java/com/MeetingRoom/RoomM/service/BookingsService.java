@@ -19,7 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -33,21 +36,19 @@ public class BookingsService {
 
     // Create a new booking and resolve time slot conflict
     public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO) {
-        // Check if the room is already booked in the given time slot
-        long overlappingBookings = bookingRepository.countOverlappingBookings(bookingRequestDTO.getRoomId(),
-                bookingRequestDTO.getStartTime(), bookingRequestDTO.getEndTime());
-
-        // If there's an overlap, throw  a conflict exception (HTTP 409 Conflict)
-        if (overlappingBookings > 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for the selected time slot!");
-        }
-
-        // Retrieve the MeetingRoom and User by ID
+        // Retrieve the MeetingRoom by ID
         MeetingRooms meetingRoom = meetingRoomRepository.findById(bookingRequestDTO.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found!"));
 
+        // Retrieve the User by ID
         Users user = userRepository.findById(bookingRequestDTO.getUserId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+
+        // Check if the room has an active booking with status BOOKED
+        List<Bookings> activeBookings = bookingRepository.findByRoomAndStatus(meetingRoom, BookingStatus.BOOKED);
+        if (!activeBookings.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked and cannot be reserved!");
+        }
 
         // Create a new booking
         Bookings booking = new Bookings();
@@ -55,7 +56,7 @@ public class BookingsService {
         booking.setUser(user);
         booking.setStartTime(bookingRequestDTO.getStartTime());
         booking.setEndTime(bookingRequestDTO.getEndTime());
-        booking.setStatus(BookingStatus.BOOKED);  // Default to confirmed
+        booking.setStatus(BookingStatus.BOOKED);  // Default status
 
         // Save the booking in the repository
         Bookings savedBooking = bookingRepository.save(booking);
@@ -73,45 +74,42 @@ public class BookingsService {
         );
     }
 
-
+    @Transactional
     public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
-        // Fetch booking
+        // Fetch the existing booking
         Bookings booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new RuntimeException("Booking not found!"));
 
         log.info("Received update request: RoomId={}, StartTime={}, EndTime={}",
                 updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
 
-        // Check for overlapping bookings
+        // Check for overlapping bookings for the new room and time slot
         long overlappingBookings = bookingRepository.countOverlappingBookings(
                 updateBookingRequestDTO.getRoomId(),
                 updateBookingRequestDTO.getStartTime(),
                 updateBookingRequestDTO.getEndTime()
         );
 
+        // If there's an overlap, throw an exception
         if (overlappingBookings > 0) {
             throw new RuntimeException("Room is already booked for the selected time slot!");
         }
 
-        // ✅ Update Room if Changed
+        // Update the room if it has changed
         if (!booking.getRoom().getId().equals(updateBookingRequestDTO.getRoomId())) {
             MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
                     .orElseThrow(() -> new RuntimeException("Room not found!"));
             booking.setRoom(newRoom);
         }
 
-        // ✅ Log Before Updating Time
-        log.info("Before update: StartTime={}, EndTime={}", booking.getStartTime(), booking.getEndTime());
-
-        // ✅ Update Time (Fix)
+        // Update the start and end time
         booking.setStartTime(updateBookingRequestDTO.getStartTime());
         booking.setEndTime(updateBookingRequestDTO.getEndTime());
 
-        log.info("After update: StartTime={}, EndTime={}", booking.getStartTime(), booking.getEndTime());
-
-        // ✅ Save Updated Booking
+        // Save the updated booking
         Bookings updatedBooking = bookingRepository.save(booking);
 
+        // Return the updated booking response DTO
         return new UpdateBookingResponseDTO(
                 updatedBooking.getBookingId(),
                 updatedBooking.getUser().getId(),
@@ -123,6 +121,8 @@ public class BookingsService {
                 updatedBooking.getStatus()
         );
     }
+
+
     @Transactional
     public CancelBookingResponseDTO cancelBooking(CancelBookingRequestDTO requestDTO) {
         // Check if the booking exists
@@ -154,18 +154,68 @@ public class BookingsService {
 
 
 
-    public void updateBookingsToCompleted() {
-        // Get current time
-        LocalDateTime currentTime = LocalDateTime.now();
+    @Transactional
+    public boolean completeBooking(Long bookingId) {
+        Optional<Bookings> optionalBooking = bookingsDao.findById(bookingId);
 
-        // Find all confirmed bookings that have ended
-        List<Bookings> bookings = bookingsDao.findByStatusAndEndTimeBefore(BookingStatus.COMPLETED, currentTime);
+        if (optionalBooking.isPresent()) {
+            Bookings booking = optionalBooking.get();
 
-        // Iterate through the bookings and update their status to COMPLETED
-        for (Bookings booking : bookings) {
-            booking.setStatus(BookingStatus.COMPLETED);
-            bookingsDao.save(booking);  // Save the updated booking
+            // Ensure the booking is currently CONFIRMED before updating
+            if (booking.getStatus() == BookingStatus.BOOKED) {
+                booking.setStatus(BookingStatus.COMPLETED);
+                bookingsDao.save(booking);
+                return true;
+            }
         }
+
+        return false; // Booking not found or already completed
+    }
+    // Retrieve all booking history based on status (Completed, Cancelled)
+    public List<BookingResponseDTO> getAllBookingHistory(List<BookingStatus> statuses) {
+        return bookingsDao.findByStatusIn(statuses).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 
+    public List<BookingResponseDTO> getUserBookingHistory(Long userId) {
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
+        List<Bookings> bookings = bookingsDao.findByUserIdAndStatusIn(userId, statuses);
+
+        if (bookings.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No booking history found for this user!");
+        }
+
+        return bookings.stream().map(booking -> new BookingResponseDTO(
+                booking.getBookingId(),
+                booking.getUser().getId(),
+                booking.getRoom().getId(),
+                booking.getRoom().getName(),
+                booking.getUser().getName(),
+                booking.getStartTime(),
+                booking.getEndTime(),
+                booking.getStatus()
+        )).collect(Collectors.toList());
+    }
+
+    // Retrieve booking history by room ID
+    public List<BookingResponseDTO> getRoomBookingHistory(Long roomId, List<BookingStatus> statuses) {
+        return bookingsDao.findByRoomIdAndStatusIn(roomId, statuses).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
+
+    // Convert entity to DTO
+    private BookingResponseDTO convertToDTO(Bookings booking) {
+        return new BookingResponseDTO(
+                booking.getBookingId(),
+                booking.getUser().getId(),
+                booking.getRoom().getId(),
+                booking.getRoom().getName(),
+                booking.getUser().getName(),
+                booking.getStartTime(),
+                booking.getEndTime(),
+                booking.getStatus()
+        );
+    }
 }

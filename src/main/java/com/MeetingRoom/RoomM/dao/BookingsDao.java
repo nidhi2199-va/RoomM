@@ -2,6 +2,8 @@ package com.MeetingRoom.RoomM.dao;
 
 import com.MeetingRoom.RoomM.Enums.BookingStatus;
 import com.MeetingRoom.RoomM.model.Bookings;
+import com.MeetingRoom.RoomM.model.MeetingRooms;
+import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -35,5 +37,19 @@ public interface BookingsDao {
     //List<Bookings> findByMeetingRoomAndStatus(Long roomId, BookingStatus status);
     // Fetch all confirmed bookings whose end time has passed
     List<Bookings> findByStatusAndEndTimeBefore(BookingStatus status, LocalDateTime currentTime);
+    List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status);
+
+    // Retrieve booking history (all completed or canceled bookings)
+    List<Bookings> findByStatusIn(List<BookingStatus> statuses);
+
+    // Retrieve booking history for a specific user
+    List<Bookings> findByUserIdAndStatusIn(Long userId, List<BookingStatus> statuses);
+
+    // Retrieve booking history for a specific room
+    List<Bookings> findByRoomIdAndStatusIn(Long roomId, List<BookingStatus> statuses);
+
+    List<Bookings> findByRoomAndStatusAndTimeRange(MeetingRooms room, BookingStatus status, LocalDateTime startTime, LocalDateTime endTime);
+
+
 
 }

@@ -1,6 +1,8 @@
 package com.MeetingRoom.RoomM.service;
 
+import com.MeetingRoom.RoomM.Exceptions.InvalidCredentialsException;
 import com.MeetingRoom.RoomM.Exceptions.UserAlreadyExistsException;
+import com.MeetingRoom.RoomM.Exceptions.UserNotFoundException;
 import com.MeetingRoom.RoomM.dto.LoginRequestDTO;
 import com.MeetingRoom.RoomM.dto.SignupRequestDTO;
 import com.MeetingRoom.RoomM.model.Users;
@@ -27,7 +29,14 @@ public class AuthService {
     public String signup(SignupRequestDTO signupRequestDTO) {
         // Check if the user already exists with the given email
         Optional<Users> existingUser = userDao.findByEmail(signupRequestDTO.getEmail());
+        if (!signupRequestDTO.getEmail().matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$")) {
+            throw new InvalidCredentialsException("Invalid email format. Example: user@example.com");
+        }
 
+        // Validate Phone Number Format (10-digit format)
+        if (!signupRequestDTO.getPhoneNumber().matches("^\\d{10}$")) {
+            throw new InvalidCredentialsException("Invalid phone number format. Must be 10 digits.");
+        }
         if (existingUser.isPresent()) {
             throw new UserAlreadyExistsException("Email already exists");
         }
@@ -54,14 +63,14 @@ public class AuthService {
         Optional<Users> existingUser = userDao.findByEmail(loginRequestDTO.getEmail());
 
         if (existingUser.isEmpty()) {
-            throw new RuntimeException("Invalid email or password");
+            throw new UserNotFoundException("User not found!!");
         }
 
         Users user = existingUser.get();
 
         // Check if the provided password matches the stored hashed password
         if (!BCrypt.checkpw(loginRequestDTO.getPassword(), user.getPassword())) {
-            throw new RuntimeException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid password");
         }
 
         // Generate JWT token after successful login

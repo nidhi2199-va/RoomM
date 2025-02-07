@@ -1,12 +1,20 @@
 package com.MeetingRoom.RoomM.controller;
 
+import com.MeetingRoom.RoomM.Enums.BookingStatus;
 import com.MeetingRoom.RoomM.dto.*;
 import com.MeetingRoom.RoomM.service.BookingsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/bookings")
@@ -17,22 +25,19 @@ public class BookingsController {
 
     // Create a new booking
     @PostMapping("/create")
-    public ResponseEntity<BookingResponseDTO> createBooking(@RequestBody @Valid BookingRequestDTO bookingRequestDTO) {
+    public ResponseEntity<?> createBooking(@RequestBody @Valid BookingRequestDTO bookingRequestDTO) {
         try {
-            // Create the booking and return response
             BookingResponseDTO bookingResponseDTO = bookingService.createBooking(bookingRequestDTO);
-            return new ResponseEntity<>(bookingResponseDTO, HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            // Handle conflict or error
-            return new ResponseEntity<>(null, HttpStatus.CONFLICT);  // Conflict if the time slot is already booked
+            return ResponseEntity.status(HttpStatus.CREATED).body(bookingResponseDTO);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred!"));
         }
     }
 
-    @PutMapping("/{bookingId}")
-    @ResponseStatus(HttpStatus.OK)
-    public UpdateBookingResponseDTO updateBooking(@PathVariable Long bookingId, @RequestBody UpdateBookingRequestDTO updateBookingRequestDTO) {
-        return bookingService.updateBooking(bookingId, updateBookingRequestDTO);
-    }
+
     @PutMapping("/cancel")
     public ResponseEntity<CancelBookingResponseDTO> cancelBooking(@RequestBody CancelBookingRequestDTO requestDTO) {
         try {
@@ -44,10 +49,37 @@ public class BookingsController {
         }
     }
     // Endpoint to manually trigger the status update
-    @PostMapping("/update-status")
-    public ResponseEntity<String> updateBookingStatuses() {
-        bookingService.updateBookingsToCompleted();
-        return ResponseEntity.ok("Booking statuses updated to COMPLETED where applicable.");
+    @PutMapping("/{bookingId}/complete")
+    public ResponseEntity<String> completeBooking(@PathVariable Long bookingId) {
+        boolean updated = bookingService.completeBooking(bookingId);
+
+        if (updated) {
+            return ResponseEntity.ok("Booking marked as COMPLETED successfully.");
+        } else {
+            return ResponseEntity.badRequest().body("Booking not found or already completed.");
+        }
+    }
+    @GetMapping("/history")
+    public ResponseEntity<List<BookingResponseDTO>> getAllBookingHistory() {
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
+        return ResponseEntity.ok(bookingService.getAllBookingHistory(statuses));
     }
 
-}
+    @GetMapping("/history/user/{userId}")
+    public ResponseEntity<List<BookingResponseDTO>> getUserBookingHistory(@PathVariable Long userId) {
+        List<BookingResponseDTO> bookingHistory = bookingService.getUserBookingHistory(userId);
+        return ResponseEntity.ok(bookingHistory);
+    }
+
+    // Get booking history for a specific room
+    @GetMapping("/history/room/{roomId}")
+    public ResponseEntity<List<BookingResponseDTO>> getRoomBookingHistory(@PathVariable Long roomId) {
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
+        return ResponseEntity.ok(bookingService.getRoomBookingHistory(roomId, statuses));
+    }
+    @PutMapping("/{bookingId}")
+    public ResponseEntity<UpdateBookingResponseDTO> updateBooking(@PathVariable Long bookingId, @RequestBody UpdateBookingRequestDTO bookingRequestDTO) {
+        UpdateBookingResponseDTO updatedBooking = bookingService.updateBooking(bookingId, bookingRequestDTO);
+        return ResponseEntity.ok(updatedBooking);
+    }
+    }
