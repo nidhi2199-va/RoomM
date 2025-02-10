@@ -17,7 +17,7 @@ public class SignupRequestDTO {
  private Department department;
  private Role role;
  private String password;
-
+private String secretCode;
  public String getPhoneNumber() {
   return phone;
  }

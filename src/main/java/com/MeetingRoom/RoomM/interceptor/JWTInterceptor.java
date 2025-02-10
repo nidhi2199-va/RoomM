@@ -5,11 +5,13 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
+
 @Component
 public class JWTInterceptor implements HandlerInterceptor {
 
@@ -18,10 +20,8 @@ public class JWTInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        // Skip authentication for signup and login routes
-        String uri = request.getRequestURI();
-        if (uri.contains("/user/signup") || uri.contains("/user/login")) {
-            return true; // Allow public routes (signup, login)
+        if(request.getMethod().equalsIgnoreCase(HttpMethod.OPTIONS.toString())) {
+            return true;
         }
 
         // Extract the JWT token from Authorization header

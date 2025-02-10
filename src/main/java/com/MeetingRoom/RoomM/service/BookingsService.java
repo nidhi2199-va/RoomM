@@ -37,6 +37,7 @@ public class BookingsService {
     // Create a new booking and resolve time slot conflict
     public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO) {
         // Retrieve the MeetingRoom by ID
+
         MeetingRooms meetingRoom = meetingRoomRepository.findById(bookingRequestDTO.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found!"));
 
