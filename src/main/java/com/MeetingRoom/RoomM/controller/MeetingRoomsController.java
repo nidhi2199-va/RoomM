@@ -67,5 +67,10 @@ public class MeetingRoomsController {
 
         return meetingRoomsService.getAvailableRoomsForTimeslot(requestedStart, requestedEnd);
     }
+    @GetMapping("/all")
+    public ResponseEntity<List<MeetingRoomsResponseDTO>> getAllMeetingRooms() {
+        List<MeetingRoomsResponseDTO> meetingRooms = meetingRoomsService.getAllMeetingRooms();
+        return ResponseEntity.ok(meetingRooms);
+    }
+    }
 
-}

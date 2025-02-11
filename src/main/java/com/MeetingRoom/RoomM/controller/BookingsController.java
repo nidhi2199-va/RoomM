@@ -6,6 +6,7 @@ import com.MeetingRoom.RoomM.service.BookingsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -25,9 +26,15 @@ public class BookingsController {
 
     // Create a new booking
     @PostMapping("/create")
-    public ResponseEntity<?> createBooking(@RequestBody @Valid BookingRequestDTO bookingRequestDTO) {
+    public ResponseEntity<?> createBooking(
+            @RequestBody @Valid BookingRequestDTO bookingRequestDTO,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
         try {
-            BookingResponseDTO bookingResponseDTO = bookingService.createBooking(bookingRequestDTO);
+            // Extract the token without "Bearer " prefix
+            String jwtToken = token.replace("Bearer ", "");
+
+            // Pass the token to the service layer
+            BookingResponseDTO bookingResponseDTO = bookingService.createBooking(bookingRequestDTO, jwtToken);
             return ResponseEntity.status(HttpStatus.CREATED).body(bookingResponseDTO);
         } catch (ResponseStatusException e) {
             return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
@@ -36,7 +43,6 @@ public class BookingsController {
                     .body(Map.of("error", "An unexpected error occurred!"));
         }
     }
-
 
     @PutMapping("/cancel")
     public ResponseEntity<CancelBookingResponseDTO> cancelBooking(@RequestBody CancelBookingRequestDTO requestDTO) {
@@ -61,7 +67,7 @@ public class BookingsController {
     }
     @GetMapping("/history")
     public ResponseEntity<List<BookingResponseDTO>> getAllBookingHistory() {
-        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED,BookingStatus.BOOKED);
         return ResponseEntity.ok(bookingService.getAllBookingHistory(statuses));
     }
 

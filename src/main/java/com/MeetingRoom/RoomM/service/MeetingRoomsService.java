@@ -137,4 +137,11 @@ public class MeetingRoomsService {
     private boolean isOverlapping(LocalDateTime existingStart, LocalDateTime existingEnd, LocalDateTime requestedStart, LocalDateTime requestedEnd) {
         return !(requestedEnd.isBefore(existingStart) || requestedStart.isAfter(existingEnd));
     }
+    public List<MeetingRoomsResponseDTO> getAllMeetingRooms() {
+        List<MeetingRooms> allRooms = meetingRoomsDao.findAll();
+
+        return allRooms.stream()
+                .map(room -> new MeetingRoomsResponseDTO(room.getId(), room.getName(), room.getCapacity()))
+                .collect(Collectors.toList());
+    }
 }

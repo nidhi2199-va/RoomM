@@ -29,11 +29,10 @@ public class MeetingRooms {
 //      @Column(name = "equipment")
 //      private List<String> equipmentList;  // List of equipment available in the room (Projector, Whiteboard, etc.)
 
-    @OneToMany(mappedBy = "room")
-    private List<Bookings> bookings;  // List of bookings for this room
-
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Bookings> bookings;
 
 
 //   @OneToMany(mappedBy = "user")
-//    private List<Users> users;  // List of users who have access to this room
+//   private List<Users> user;  // List of users who have access to this room
 }

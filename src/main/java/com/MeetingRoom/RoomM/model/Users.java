@@ -4,6 +4,8 @@ import com.MeetingRoom.RoomM.Enums.Role;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.List;
+
 
 @Entity
 @Table(name = "users")
@@ -31,5 +33,6 @@ public class Users {
     private Role role; // Role to differentiate between "User" or "Admin"
 
 
-
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Bookings> bookings;
 }

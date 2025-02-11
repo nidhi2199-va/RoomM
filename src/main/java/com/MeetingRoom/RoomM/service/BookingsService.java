@@ -1,6 +1,7 @@
 package com.MeetingRoom.RoomM.service;
 
 import com.MeetingRoom.RoomM.Enums.BookingStatus;
+import com.MeetingRoom.RoomM.Utils.JwtUtil;
 import com.MeetingRoom.RoomM.dao.BookingsDao;
 import com.MeetingRoom.RoomM.dao.MeetingRoomsDao;
 import com.MeetingRoom.RoomM.dao.UserDao;
@@ -17,7 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 import lombok.extern.slf4j.Slf4j;
 
 
-
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -33,28 +34,41 @@ public class BookingsService {
     private final MeetingRoomsDao meetingRoomRepository;
     private final UserDao userRepository;
     private final BookingsDao bookingsDao;
+    private final JwtUtil jwtUtil;
 
-    // Create a new booking and resolve time slot conflict
-    public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO) {
+    public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO, String token) {
+        // Extract user email from JWT token
+        String email = jwtUtil.extractEmail(token);
+
+        // Retrieve the User from the database using email
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+
         // Retrieve the MeetingRoom by ID
-
         MeetingRooms meetingRoom = meetingRoomRepository.findById(bookingRequestDTO.getRoomId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found!"));
 
-        // Retrieve the User by ID
-        Users user = userRepository.findById(bookingRequestDTO.getUserId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+        // Extract the booking date from the requested start time
+        LocalDate bookingDate = bookingRequestDTO.getStartTime().toLocalDate();
 
-        // Check if the room has an active booking with status BOOKED
-        List<Bookings> activeBookings = bookingRepository.findByRoomAndStatus(meetingRoom, BookingStatus.BOOKED);
+        // Fetch active bookings for the same room that are not COMPLETED
+        List<Bookings> activeBookings = bookingRepository.findByRoomAndStatus(meetingRoom, BookingStatus.BOOKED)
+                .stream()
+                .filter(b -> b.getStartTime().toLocalDate().equals(bookingDate)) // Ensure same date
+                .filter(b ->
+                        (bookingRequestDTO.getStartTime().isBefore(b.getEndTime()) &&
+                                bookingRequestDTO.getEndTime().isAfter(b.getStartTime())) // Time Overlaps
+                )
+                .toList();
+
         if (!activeBookings.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked and cannot be reserved!");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for this time slot on the selected date!");
         }
 
         // Create a new booking
         Bookings booking = new Bookings();
         booking.setRoom(meetingRoom);
-        booking.setUser(user);
+        booking.setUser(user);  // Set the user from the extracted email
         booking.setStartTime(bookingRequestDTO.getStartTime());
         booking.setEndTime(bookingRequestDTO.getEndTime());
         booking.setStatus(BookingStatus.BOOKED);  // Default status
@@ -74,6 +88,9 @@ public class BookingsService {
                 savedBooking.getStatus()
         );
     }
+
+
+
 
     @Transactional
     public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {

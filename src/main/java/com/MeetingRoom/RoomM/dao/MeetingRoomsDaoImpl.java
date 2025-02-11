@@ -47,4 +47,5 @@ public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
             entityManager.remove(meetingRooms);
         }
     }
+
 }
