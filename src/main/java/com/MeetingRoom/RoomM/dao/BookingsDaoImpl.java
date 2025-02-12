@@ -116,8 +116,12 @@ public class BookingsDaoImpl implements BookingsDao {
         TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
         query.setParameter("userId", userId);
         query.setParameter("statuses", statuses);
-        return query.getResultList();
+
+        List<Bookings> results = query.getResultList();
+        System.out.println("Fetched Bookings: " + results); // Debugging log
+        return results;
     }
+
 
     // Retrieve booking history for a specific room
     @Override
@@ -141,4 +145,43 @@ public class BookingsDaoImpl implements BookingsDao {
                 .setParameter("endTime", endTime)
                 .getResultList();
     }
-}
+
+    @Override
+    public boolean isOverlapping(Long roomId, LocalDateTime startTime, LocalDateTime endTime) {
+        String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId " +
+                "AND b.status = 'CONFIRMED' " +
+                "AND ((b.startTime < :endTime AND b.endTime > :startTime))";
+
+        Long count = entityManager.createQuery(query, Long.class)
+                .setParameter("roomId", roomId)
+                .setParameter("startTime", startTime)
+                .setParameter("endTime", endTime)
+                .getSingleResult();
+
+        return count > 0;
+    }
+    @Override
+    public long countOverlappingBookingsExcludingCurrent(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId) {
+        String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId AND " +
+                "b.startTime < :endTime AND b.endTime > :startTime AND b.id <> :bookingId";
+        return entityManager.createQuery(query, Long.class)
+                .setParameter("roomId", roomId)
+                .setParameter("startTime", startTime)
+                .setParameter("endTime", endTime)
+                .setParameter("bookingId", bookingId)
+                .getSingleResult();
+    }
+
+    @Override
+    public long countUserOverlappingBookings(Long userId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId) {
+        String query = "SELECT COUNT(b) FROM Bookings b WHERE b.user.id = :userId AND " +
+                "b.startTime < :endTime AND b.endTime > :startTime AND b.id <> :bookingId";
+        return entityManager.createQuery(query, Long.class)
+                .setParameter("userId", userId)
+                .setParameter("startTime", startTime)
+                .setParameter("endTime", endTime)
+                .setParameter("bookingId", bookingId)
+                .getSingleResult();
+    }
+    }
+

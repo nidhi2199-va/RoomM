@@ -19,7 +19,7 @@ public class MeetingRooms {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;  // Meeting Room ID
-
+    @Column(unique = true)
     private String name;  // Name of the meeting room
 
     private int capacity;  // Room capacity

@@ -9,8 +9,5 @@ import java.time.LocalDateTime;
 @Setter
 public class CancelBookingRequestDTO {
     private Long bookingId;
-    private Long userId;
-    private Long roomId;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+
 }

@@ -1,6 +1,9 @@
 package com.MeetingRoom.RoomM.service;
 
 import com.MeetingRoom.RoomM.Enums.BookingStatus;
+import com.MeetingRoom.RoomM.Exceptions.BadRequestException;
+import com.MeetingRoom.RoomM.Exceptions.ConflictException;
+import com.MeetingRoom.RoomM.Exceptions.ResourceNotFoundException;
 import com.MeetingRoom.RoomM.Utils.JwtUtil;
 import com.MeetingRoom.RoomM.dao.BookingsDao;
 import com.MeetingRoom.RoomM.dao.MeetingRoomsDao;
@@ -12,8 +15,8 @@ import com.MeetingRoom.RoomM.model.Users;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
-import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
 import org.springframework.web.server.ResponseStatusException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,18 +26,20 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class BookingsService {
-
+    private static final Logger LOGGER = Logger.getLogger(BookingsService.class.getName());
     private final BookingsDao bookingRepository;
     private final MeetingRoomsDao meetingRoomRepository;
     private final UserDao userRepository;
     private final BookingsDao bookingsDao;
     private final JwtUtil jwtUtil;
+
 
     public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO, String token) {
         // Extract user email from JWT token
@@ -90,87 +95,174 @@ public class BookingsService {
     }
 
 
+//@Transactional
+//public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
+//    try {
+//        // Fetch the existing booking
+//        Bookings booking = bookingRepository.findById(bookingId)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found for ID: " + bookingId));
+//
+//        log.info("Received update request for Booking ID={}: RoomId={}, StartTime={}, EndTime={}",
+//                bookingId, updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
+//
+//        // Allow updates only if the booking is still in "BOOKED" status
+//        if (booking.getStatus().equals(BookingStatus.COMPLETED) || booking.getStatus().equals(BookingStatus.CANCELLED)) {
+//            throw new BookingStatusException("Booking is already " + booking.getStatus() + " and cannot be modified.");
+//        }
+//
+//        // Check for overlapping bookings
+//        Long overlappingBookings = bookingRepository.countOverlappingBookings(
+//                updateBookingRequestDTO.getRoomId(),
+//                updateBookingRequestDTO.getStartTime(),
+//                updateBookingRequestDTO.getEndTime()
+//        );
+//
+//
+//
+//        if (overlappingBookings > 0) {
+//            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for the selected time slot!");
+//        }
+//
+//        // Update the room if changed
+//        if (!booking.getRoom().getId().equals(updateBookingRequestDTO.getRoomId())) {
+//            MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
+//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found!"));
+//            booking.setRoom(newRoom);
+//        }
+//
+//        // Update the start and end time
+//        booking.setStartTime(updateBookingRequestDTO.getStartTime());
+//        booking.setEndTime(updateBookingRequestDTO.getEndTime());
+//
+//        // Save the updated booking
+//        Bookings updatedBooking = bookingRepository.save(booking);
+//
+//        log.info("Booking ID={} successfully updated", updatedBooking.getBookingId());
+//
+//        return new UpdateBookingResponseDTO(
+//                updatedBooking.getBookingId(),
+//                updatedBooking.getUser().getId(),
+//                updatedBooking.getRoom().getId(),
+//                updatedBooking.getRoom().getName(),
+//                updatedBooking.getUser().getName(),
+//                updatedBooking.getStartTime(),
+//                updatedBooking.getEndTime(),
+//                updatedBooking.getStatus()
+//        );
+//    } catch (BookingStatusException ex) {
+//        throw new ResponseStatusException(HttpStatus.CONFLICT, ex.getMessage());
+//    } catch (Exception ex) {
+//        log.error("Unexpected error occurred while updating booking: {}", ex.getMessage(), ex);
+//        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Unexpected server error. Please try again later.");
+//    }
+//}
+//@Transactional
+//public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
+//
+//        // Fetch the existing booking
+//        Bookings booking = bookingRepository.findById(bookingId)
+//                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found for ID: " + bookingId));
+//
+//        log.info("Received update request for Booking ID={}: RoomId={}, StartTime={}, EndTime={}",
+//                bookingId, updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
+//
+//        // Allow updates only if the booking is still in "BOOKED" status
+//        if (booking.getStatus().equals(BookingStatus.COMPLETED) || booking.getStatus().equals(BookingStatus.CANCELLED)) {
+//            throw new BookingStatusException("Booking is already " + booking.getStatus() + " and cannot be modified.");
+//        }
+//
+//        // Check for overlapping bookings in the room at the requested timeslot
+//        Long overlappingBookings = bookingRepository.countOverlappingBookings(
+//                updateBookingRequestDTO.getRoomId(),
+//                updateBookingRequestDTO.getStartTime(),
+//                updateBookingRequestDTO.getEndTime()
+//        );
+//
+//        if (overlappingBookings > 0) {
+//            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room is already booked for the selected time slot!");
+//        }
+//
+//        // Update the room if the room has changed
+//        if (!booking.getRoom().getId().equals(updateBookingRequestDTO.getRoomId())) {
+//            MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
+//                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Room not found!"));
+//            booking.setRoom(newRoom);
+//        }
+//
+//        // Update the start and end time
+//        booking.setStartTime(updateBookingRequestDTO.getStartTime());
+//        booking.setEndTime(updateBookingRequestDTO.getEndTime());
+//
+//        // Save the updated booking
+//        Bookings updatedBooking = bookingRepository.save(booking);
+//
+//        log.info("Booking ID={} successfully updated", updatedBooking.getBookingId());
+//
+//        // Return response DTO with updated information
+//        return new UpdateBookingResponseDTO(
+//                updatedBooking.getBookingId(),
+//                updatedBooking.getUser().getId(),
+//                updatedBooking.getRoom().getId(),
+//                updatedBooking.getRoom().getName(),
+//                updatedBooking.getUser().getName(),
+//                updatedBooking.getStartTime(),
+//                updatedBooking.getEndTime(),
+//                updatedBooking.getStatus()
+//        );
+//
+//}
 
 
+    //    @Transactional
+//    public CancelBookingResponseDTO cancelBooking(CancelBookingRequestDTO requestDTO) {
+//        // Check if the booking exists
+//        Bookings booking = bookingRepository.findById(requestDTO.getBookingId())
+//                .orElseThrow(() -> new RuntimeException("Booking not found"));
+//
+//        // Check if the user is the one who made the booking or if the user has permission
+//        if (!booking.getUser().getId().equals(requestDTO.getUserId())) {
+//            throw new RuntimeException("You do not have permission to cancel this booking");
+//        }
+//
+//        // Check if the room ID matches the booking room ID
+//        if (!booking.getRoom().getId().equals(requestDTO.getRoomId())) {
+//            throw new RuntimeException("Room ID does not match with the booking");
+//        }
+//
+//        // Check if the timeslot matches
+//        if (!booking.getStartTime().equals(requestDTO.getStartTime()) || !booking.getEndTime().equals(requestDTO.getEndTime())) {
+//            throw new RuntimeException("Time slot does not match with the booking");
+//        }
+//
+//        // Cancel the booking by changing its status to CANCELED
+//        booking.setStatus(BookingStatus.CANCELLED);
+//        bookingRepository.save(booking);
+//
+//        // Return success response
+//        return new CancelBookingResponseDTO(booking.getBookingId(), "Booking has been successfully canceled!");
+//    }
     @Transactional
-    public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
-        // Fetch the existing booking
-        Bookings booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new RuntimeException("Booking not found!"));
+    public void cancelBooking(Long bookingId, String token) {
+        // Extract email from JWT token
+        String email = jwtUtil.extractEmail(token);
 
-        log.info("Received update request: RoomId={}, StartTime={}, EndTime={}",
-                updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
+        // Find the booking by ID
+        Bookings booking = bookingsDao.findById(bookingId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Booking not found"));
 
-        // Check for overlapping bookings for the new room and time slot
-        long overlappingBookings = bookingRepository.countOverlappingBookings(
-                updateBookingRequestDTO.getRoomId(),
-                updateBookingRequestDTO.getStartTime(),
-                updateBookingRequestDTO.getEndTime()
-        );
+        // Find the user by email
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        // If there's an overlap, throw an exception
-        if (overlappingBookings > 0) {
-            throw new RuntimeException("Room is already booked for the selected time slot!");
+        // Check if the user is the owner of the booking
+        if (!booking.getUser().getId().equals(user.getId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "You are not authorized to cancel this booking");
         }
 
-        // Update the room if it has changed
-        if (!booking.getRoom().getId().equals(updateBookingRequestDTO.getRoomId())) {
-            MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
-                    .orElseThrow(() -> new RuntimeException("Room not found!"));
-            booking.setRoom(newRoom);
-        }
-
-        // Update the start and end time
-        booking.setStartTime(updateBookingRequestDTO.getStartTime());
-        booking.setEndTime(updateBookingRequestDTO.getEndTime());
-
-        // Save the updated booking
-        Bookings updatedBooking = bookingRepository.save(booking);
-
-        // Return the updated booking response DTO
-        return new UpdateBookingResponseDTO(
-                updatedBooking.getBookingId(),
-                updatedBooking.getUser().getId(),
-                updatedBooking.getRoom().getId(),
-                updatedBooking.getRoom().getName(),
-                updatedBooking.getUser().getName(),
-                updatedBooking.getStartTime(),
-                updatedBooking.getEndTime(),
-                updatedBooking.getStatus()
-        );
-    }
-
-
-    @Transactional
-    public CancelBookingResponseDTO cancelBooking(CancelBookingRequestDTO requestDTO) {
-        // Check if the booking exists
-        Bookings booking = bookingRepository.findById(requestDTO.getBookingId())
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-
-        // Check if the user is the one who made the booking or if the user has permission
-        if (!booking.getUser().getId().equals(requestDTO.getUserId())) {
-            throw new RuntimeException("You do not have permission to cancel this booking");
-        }
-
-        // Check if the room ID matches the booking room ID
-        if (!booking.getRoom().getId().equals(requestDTO.getRoomId())) {
-            throw new RuntimeException("Room ID does not match with the booking");
-        }
-
-        // Check if the timeslot matches
-        if (!booking.getStartTime().equals(requestDTO.getStartTime()) || !booking.getEndTime().equals(requestDTO.getEndTime())) {
-            throw new RuntimeException("Time slot does not match with the booking");
-        }
-
-        // Cancel the booking by changing its status to CANCELED
+        // Update booking status to 'CANCELLED'
         booking.setStatus(BookingStatus.CANCELLED);
-        bookingRepository.save(booking);
-
-        // Return success response
-        return new CancelBookingResponseDTO(booking.getBookingId(), "Booking has been successfully canceled!");
+        bookingsDao.save(booking);
     }
-
-
 
     @Transactional
     public boolean completeBooking(Long bookingId) {
@@ -189,6 +281,7 @@ public class BookingsService {
 
         return false; // Booking not found or already completed
     }
+
     // Retrieve all booking history based on status (Completed, Cancelled)
     public List<BookingResponseDTO> getAllBookingHistory(List<BookingStatus> statuses) {
         return bookingsDao.findByStatusIn(statuses).stream()
@@ -196,9 +289,20 @@ public class BookingsService {
                 .collect(Collectors.toList());
     }
 
-    public List<BookingResponseDTO> getUserBookingHistory(Long userId) {
-        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
-        List<Bookings> bookings = bookingsDao.findByUserIdAndStatusIn(userId, statuses);
+    public List<BookingResponseDTO> getUserBookingHistory(String token) {
+        // Extract JWT token (remove "Bearer " prefix)
+
+
+        // Extract user email from JWT
+        String email = jwtUtil.extractEmail(token);
+
+        // Retrieve the User from the database using email
+        Users user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found!"));
+
+        // Fetch booking history using user ID
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED, BookingStatus.BOOKED);
+        List<Bookings> bookings = bookingsDao.findByUserIdAndStatusIn(user.getId(), statuses);
 
         if (bookings.isEmpty()) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No booking history found for this user!");
@@ -206,15 +310,16 @@ public class BookingsService {
 
         return bookings.stream().map(booking -> new BookingResponseDTO(
                 booking.getBookingId(),
-                booking.getUser().getId(),
+                user.getId(),
                 booking.getRoom().getId(),
                 booking.getRoom().getName(),
-                booking.getUser().getName(),
+                user.getName(),
                 booking.getStartTime(),
                 booking.getEndTime(),
                 booking.getStatus()
         )).collect(Collectors.toList());
     }
+
 
     // Retrieve booking history by room ID
     public List<BookingResponseDTO> getRoomBookingHistory(Long roomId, List<BookingStatus> statuses) {
@@ -236,4 +341,183 @@ public class BookingsService {
                 booking.getStatus()
         );
     }
+
+    //    @Transactional
+//    public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
+//        // Fetch the existing booking
+//        Bookings booking = bookingRepository.findById(bookingId)
+//                .orElseThrow(() -> new RuntimeException("Booking not found!"));
+//
+//        // Ensure only BOOKED status meetings can be updated
+//        if (!booking.getStatus().equals(BookingStatus.BOOKED)) {
+//            throw new RuntimeException("Only 'BOOKED' status bookings can be updated!");
+//        }
+//
+//        log.info("Received update request: RoomId={}, StartTime={}, EndTime={}",
+//                updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
+//
+//        // Check for overlapping bookings for the new room and time slot
+//        long overlappingBookings = bookingRepository.countOverlappingBookings(
+//                updateBookingRequestDTO.getRoomId(),
+//                updateBookingRequestDTO.getStartTime(),
+//                updateBookingRequestDTO.getEndTime()
+//        );
+//
+//        // If there's an overlap, throw an exception
+//        if (overlappingBookings > 0) {
+//            throw new RuntimeException("Room is already booked for the selected time slot!");
+//        }
+//
+//        // Set the old booking status to CANCELLED
+//        booking.setStatus(BookingStatus.CANCELLED);
+//        bookingRepository.save(booking);
+//
+//        // Create a new booking with the updated details
+//        MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
+//                .orElseThrow(() -> new RuntimeException("Room not found!"));
+//
+//        Bookings newBooking = new Bookings();
+//        newBooking.setUser(booking.getUser());
+//        newBooking.setRoom(newRoom);
+//        newBooking.setStartTime(updateBookingRequestDTO.getStartTime());
+//        newBooking.setEndTime(updateBookingRequestDTO.getEndTime());
+//        newBooking.setStatus(BookingStatus.BOOKED);
+//
+//        // Save the new booking
+//        Bookings savedBooking = bookingRepository.save(newBooking);
+//
+//        // Return the updated booking response DTO
+//        return new UpdateBookingResponseDTO(
+//                savedBooking.getBookingId(),
+//                savedBooking.getUser().getId(),
+//                savedBooking.getRoom().getId(),
+//                savedBooking.getRoom().getName(),
+//                savedBooking.getUser().getName(),
+//                savedBooking.getStartTime(),
+//                savedBooking.getEndTime(),
+//                savedBooking.getStatus()
+//        );
+//    }
+//}
+//    @Transactional
+//    public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
+//        // Fetch the existing booking
+//        Bookings booking = bookingRepository.findById(bookingId)
+//                .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
+//
+//        // Ensure only BOOKED status meetings can be updated
+//        if (!booking.getStatus().equals(BookingStatus.BOOKED)) {
+//            throw new BadRequestException("Only 'BOOKED' status bookings can be updated!");
+//        }
+//
+//        log.info("Received update request: RoomId={}, StartTime={}, EndTime={}",
+//                updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
+//
+//        // Check for overlapping bookings for the new room and time slot
+//        long overlappingBookings = bookingRepository.countOverlappingBookings(
+//                updateBookingRequestDTO.getRoomId(),
+//                updateBookingRequestDTO.getStartTime(),
+//                updateBookingRequestDTO.getEndTime()
+//        );
+//
+//        // If there's an overlap, throw an exception
+//        if (overlappingBookings > 0) {
+//            throw new ConflictException("Room is already booked for the selected time slot!");
+//        }
+//
+//        // Set the old booking status to CANCELLED
+//        booking.setStatus(BookingStatus.CANCELLED);
+//        bookingRepository.save(booking);
+//
+//        // Create a new booking with the updated details
+//        MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
+//                .orElseThrow(() -> new ResourceNotFoundException("Room not found!"));
+//
+//        Bookings newBooking = new Bookings();
+//        newBooking.setUser(booking.getUser());
+//        newBooking.setRoom(newRoom);
+//        newBooking.setStartTime(updateBookingRequestDTO.getStartTime());
+//        newBooking.setEndTime(updateBookingRequestDTO.getEndTime());
+//        newBooking.setStatus(BookingStatus.BOOKED);
+//
+//        // Save the new booking
+//        Bookings savedBooking = bookingRepository.save(newBooking);
+//
+//        // Return the updated booking response DTO
+//        return new UpdateBookingResponseDTO(
+//                savedBooking.getBookingId(),
+//                savedBooking.getUser().getId(),
+//                savedBooking.getRoom().getId(),
+//                savedBooking.getRoom().getName(),
+//                savedBooking.getUser().getName(),
+//                savedBooking.getStartTime(),
+//                savedBooking.getEndTime(),
+//                savedBooking.getStatus()
+//        );}
+    @Transactional
+    public UpdateBookingResponseDTO updateBooking(Long bookingId, UpdateBookingRequestDTO updateBookingRequestDTO) {
+        // Fetch the existing booking
+        Bookings booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found!"));
+
+        // Ensure only BOOKED status meetings can be updated
+        if (!booking.getStatus().equals(BookingStatus.BOOKED)) {
+            throw new BadRequestException("Only 'BOOKED' status bookings can be updated!");
+        }
+
+        log.info("Received update request: RoomId={}, StartTime={}, EndTime={}",
+                updateBookingRequestDTO.getRoomId(), updateBookingRequestDTO.getStartTime(), updateBookingRequestDTO.getEndTime());
+
+        // Check for overlapping bookings for the new room and time slot (excluding the current booking)
+        long overlappingBookings = bookingRepository.countOverlappingBookingsExcludingCurrent(
+                updateBookingRequestDTO.getRoomId(),
+                updateBookingRequestDTO.getStartTime(),
+                updateBookingRequestDTO.getEndTime(),
+                bookingId
+        );
+
+        // Check if the new time slot conflicts with the user's existing bookings
+        long userOverlappingBookings = bookingRepository.countUserOverlappingBookings(
+                booking.getUser().getId(),
+                updateBookingRequestDTO.getStartTime(),
+                updateBookingRequestDTO.getEndTime(),
+                bookingId
+        );
+
+        // If there's an overlap, throw an exception
+        if (overlappingBookings > 0 || userOverlappingBookings > 0) {
+            throw new ConflictException("The selected time slot conflicts with another booking!");
+        }
+
+        // Set the old booking status to CANCELLED
+        booking.setStatus(BookingStatus.CANCELLED);
+        bookingRepository.save(booking);
+
+        // Create a new booking with the updated details
+        MeetingRooms newRoom = meetingRoomRepository.findById(updateBookingRequestDTO.getRoomId())
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found!"));
+
+        Bookings newBooking = new Bookings();
+        newBooking.setUser(booking.getUser());
+        newBooking.setRoom(newRoom);
+        newBooking.setStartTime(updateBookingRequestDTO.getStartTime());
+        newBooking.setEndTime(updateBookingRequestDTO.getEndTime());
+        newBooking.setStatus(BookingStatus.BOOKED);
+
+        // Save the new booking
+        Bookings savedBooking = bookingRepository.save(newBooking);
+
+        // Return the updated booking response DTO
+        return new UpdateBookingResponseDTO(
+                savedBooking.getBookingId(),
+                savedBooking.getUser().getId(),
+                savedBooking.getRoom().getId(),
+                savedBooking.getRoom().getName(),
+                savedBooking.getUser().getName(),
+                savedBooking.getStartTime(),
+                savedBooking.getEndTime(),
+                savedBooking.getStatus()
+        );
+    }
+
 }

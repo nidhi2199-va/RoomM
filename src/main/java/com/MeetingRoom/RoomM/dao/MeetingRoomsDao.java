@@ -13,5 +13,6 @@ public interface MeetingRoomsDao {
     Optional<MeetingRooms> findById(Long id);
      List<MeetingRooms> findAll();
     void deleteById(Long id);
-
+    MeetingRooms findByName(String name);
+    Optional<MeetingRooms> findAvailableRoom(LocalDateTime startTime, LocalDateTime endTime, int minCapacity);
 }

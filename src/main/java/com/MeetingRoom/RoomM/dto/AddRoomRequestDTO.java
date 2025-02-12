@@ -16,5 +16,5 @@ public class AddRoomRequestDTO {
     private String name;
     private Integer capacity;
    // private List<String> equipmentList;
-    private Boolean isAvailable;
+    //private Boolean isAvailable;
 }

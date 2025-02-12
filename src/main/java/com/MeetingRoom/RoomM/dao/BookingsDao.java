@@ -51,5 +51,9 @@ public interface BookingsDao {
     List<Bookings> findByRoomAndStatusAndTimeRange(MeetingRooms room, BookingStatus status, LocalDateTime startTime, LocalDateTime endTime);
 
 
+    boolean isOverlapping(Long roomId, LocalDateTime startTime, LocalDateTime endTime);
 
+    long countOverlappingBookingsExcludingCurrent(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId);
+
+    long countUserOverlappingBookings(Long userId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId);
 }

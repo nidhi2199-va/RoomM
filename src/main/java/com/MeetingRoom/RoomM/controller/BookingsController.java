@@ -44,16 +44,7 @@ public class BookingsController {
         }
     }
 
-    @PutMapping("/cancel")
-    public ResponseEntity<CancelBookingResponseDTO> cancelBooking(@RequestBody CancelBookingRequestDTO requestDTO) {
-        try {
-            CancelBookingResponseDTO response = bookingService.cancelBooking(requestDTO);
-            return ResponseEntity.ok(response);
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(new CancelBookingResponseDTO(null, e.getMessage()));
-        }
-    }
+
     // Endpoint to manually trigger the status update
     @PutMapping("/{bookingId}/complete")
     public ResponseEntity<String> completeBooking(@PathVariable Long bookingId) {
@@ -67,15 +58,32 @@ public class BookingsController {
     }
     @GetMapping("/history")
     public ResponseEntity<List<BookingResponseDTO>> getAllBookingHistory() {
-        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED,BookingStatus.BOOKED);
+        List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.BOOKED);
         return ResponseEntity.ok(bookingService.getAllBookingHistory(statuses));
     }
 
-    @GetMapping("/history/user/{userId}")
-    public ResponseEntity<List<BookingResponseDTO>> getUserBookingHistory(@PathVariable Long userId) {
-        List<BookingResponseDTO> bookingHistory = bookingService.getUserBookingHistory(userId);
-        return ResponseEntity.ok(bookingHistory);
+
+    @GetMapping("/history/user")
+    public ResponseEntity<?> getUserBookingHistory(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        try {
+            // Remove "Bearer " from the token
+            String jwtToken = token.replace("Bearer ", "");
+
+            // Fetch booking history using the token
+
+            List<BookingResponseDTO> bookingHistory = bookingService.getUserBookingHistory(jwtToken);
+
+            return ResponseEntity.ok(bookingHistory);
+        } catch (ResponseStatusException e) {
+            // Return proper HTTP status with error message
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        } catch (Exception e) {
+            // Log and return internal server error
+
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "An unexpected error occurred"));
+        }
     }
+
 
     // Get booking history for a specific room
     @GetMapping("/history/room/{roomId}")
@@ -83,9 +91,36 @@ public class BookingsController {
         List<BookingStatus> statuses = Arrays.asList(BookingStatus.COMPLETED, BookingStatus.CANCELLED);
         return ResponseEntity.ok(bookingService.getRoomBookingHistory(roomId, statuses));
     }
+    @PutMapping("/cancel")
+    public ResponseEntity<?> cancelBooking(
+            @RequestBody Map<String, Long> requestBody,
+            @RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
+        try {
+            // Extract booking ID from request body
+            Long bookingId = requestBody.get("bookingId");
+            if (bookingId == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Booking ID is required"));
+            }
+
+            // Extract token without "Bearer " prefix
+            String jwtToken = token.replace("Bearer ", "");
+
+            // Call the service method to cancel the booking
+            bookingService.cancelBooking(bookingId, jwtToken);
+
+            return ResponseEntity.ok(Map.of("message", "Booking canceled successfully!"));
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(Map.of("error", e.getReason()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", "An unexpected error occurred!"));
+        }
+    }
+
     @PutMapping("/{bookingId}")
     public ResponseEntity<UpdateBookingResponseDTO> updateBooking(@PathVariable Long bookingId, @RequestBody UpdateBookingRequestDTO bookingRequestDTO) {
         UpdateBookingResponseDTO updatedBooking = bookingService.updateBooking(bookingId, bookingRequestDTO);
         return ResponseEntity.ok(updatedBooking);
     }
-    }
+}

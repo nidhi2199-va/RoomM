@@ -1,6 +1,7 @@
 package com.MeetingRoom.RoomM.service;
 
 import com.MeetingRoom.RoomM.Enums.Role;
+import com.MeetingRoom.RoomM.Exceptions.RoomAlreadyExistsException;
 import com.MeetingRoom.RoomM.dao.BookingsDao;
 import com.MeetingRoom.RoomM.dao.MeetingRoomsDao;
 import com.MeetingRoom.RoomM.dto.*;
@@ -28,26 +29,58 @@ public class MeetingRoomsService {
         this.jwtUtil = jwtUtil;
     }
 
-    // Add Meeting Room - Only Admins can add rooms
-    public MeetingRooms addMeetingRoom(AddRoomRequestDTO addRoomRequestDTO, String token) {
+//    // Add Meeting Room - Only Admins can add rooms
+//    public MeetingRooms addMeetingRoom(AddRoomRequestDTO addRoomRequestDTO, String token) {
+//        // Extract user role from JWT
+//        String role = jwtUtil.extractRole(token);
+//
+////         Allow only Admins to add rooms
+//        if (!"ADMIN".equals(role)) {
+//            System.out.println(role);
+//            throw new RuntimeException("Access Denied! Only Admins can add meeting rooms.");
+//        }
+//
+//        // Create a new MeetingRooms entity from DTO
+//        MeetingRooms meetingRoom = new MeetingRooms();
+//        meetingRoom.setName(addRoomRequestDTO.getName());
+//        meetingRoom.setCapacity(addRoomRequestDTO.getCapacity());
+//
+//
+//        // Save the new room in the database
+//        return meetingRoomsDao.save(meetingRoom);
+//    }
+// Add Meeting Room - Only Admins can add rooms
+public MeetingRooms addMeetingRoom(AddRoomRequestDTO addRoomRequestDTO, String token) {
+    try {
         // Extract user role from JWT
         String role = jwtUtil.extractRole(token);
 
-//         Allow only Admins to add rooms
+        // Allow only Admins to add rooms
         if (!"ADMIN".equals(role)) {
             System.out.println(role);
             throw new RuntimeException("Access Denied! Only Admins can add meeting rooms.");
         }
 
+        // Check if a room with the same name already exists
+        MeetingRooms existingRoom = meetingRoomsDao.findByName(addRoomRequestDTO.getName());
+        if (existingRoom != null) {
+            throw new RoomAlreadyExistsException("Room name already exists.");
+        }
         // Create a new MeetingRooms entity from DTO
         MeetingRooms meetingRoom = new MeetingRooms();
         meetingRoom.setName(addRoomRequestDTO.getName());
         meetingRoom.setCapacity(addRoomRequestDTO.getCapacity());
 
-
         // Save the new room in the database
         return meetingRoomsDao.save(meetingRoom);
+    } catch (Exception e) {
+        // Log the exception and rethrow it
+        e.printStackTrace(); // For debugging, you can replace with proper logging
+        throw new RuntimeException("Failed to add meeting room: " + e.getMessage(), e);
     }
+}
+
+
     public MeetingRooms updateMeetingRoom(Long roomId, UpdateRoomRequestDTO updateRoomRequestDTO, String token) {
         String role = jwtUtil.extractRole(token);
         if (!"ADMIN".equals(role)) {
