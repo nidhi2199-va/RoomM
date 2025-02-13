@@ -177,7 +177,9 @@ public class BookingsDaoImpl implements BookingsDao {
     @Override
     public long countUserOverlappingBookings(Long userId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId) {
         String query = "SELECT COUNT(b) FROM Bookings b WHERE b.user.id = :userId AND " +
-                "b.startTime < :endTime AND b.endTime > :startTime AND b.id <> :bookingId";
+                "b.startTime <= :endTime AND b.endTime >= :startTime OR" +
+                ":endTime > b.startTime AND :endTime < b.endTime OR"
+                + ":startTime > b.startTime AND :endTime < b.endTime AND b.id <> :bookingId";
         return entityManager.createQuery(query, Long.class)
                 .setParameter("userId", userId)
                 .setParameter("startTime", startTime)
