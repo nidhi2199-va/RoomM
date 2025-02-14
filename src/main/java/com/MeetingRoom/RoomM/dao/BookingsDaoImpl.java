@@ -55,7 +55,7 @@ public class BookingsDaoImpl implements BookingsDao {
     @Override
     public long countOverlappingBookings(Long roomId, LocalDateTime startTime, LocalDateTime endTime) {
         String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId " +
-                "AND b.status = 'CONFIRMED' " +  // Only confirmed bookings
+                "AND b.status = 'BOOKED' " +  // Only confirmed bookings
                 "AND ((b.startTime < :endTime AND b.endTime > :startTime))";
 
         return (Long) entityManager.createQuery(query)
@@ -86,13 +86,13 @@ public class BookingsDaoImpl implements BookingsDao {
                 .getResultList();
     }
 
-    @Override
-    public List<Bookings> findBookingsWithinTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
-        return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.startTime >= :startTime AND b.endTime <= :endTime", Bookings.class)
-                .setParameter("startTime", startTime)
-                .setParameter("endTime", endTime)
-                .getResultList();
-    }
+//    @Override
+//    public List<Bookings> findBookingsWithinTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
+//        return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.startTime >= :startTime AND b.endTime <= :endTime", Bookings.class)
+//                .setParameter("startTime", startTime)
+//                .setParameter("endTime", endTime)
+//                .getResultList();
+//    }
     @Override
     public List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status) {
         String jpql = "SELECT b FROM Bookings b WHERE b.room = :room AND b.status = :status";
@@ -149,7 +149,7 @@ public class BookingsDaoImpl implements BookingsDao {
     @Override
     public boolean isOverlapping(Long roomId, LocalDateTime startTime, LocalDateTime endTime) {
         String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId " +
-                "AND b.status = 'CONFIRMED' " +
+                "AND b.status = 'BOOKED' " +
                 "AND ((b.startTime < :endTime AND b.endTime > :startTime))";
 
         Long count = entityManager.createQuery(query, Long.class)

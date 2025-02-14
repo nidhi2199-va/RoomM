@@ -43,13 +43,13 @@ public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
         return entityManager.createQuery("SELECT m FROM MeetingRooms m", MeetingRooms.class).getResultList();
     }
 
-    @Override
-    public void deleteById(Long id) {
-        MeetingRooms meetingRooms = entityManager.find(MeetingRooms.class, id);
-        if (meetingRooms != null) {
-            entityManager.remove(meetingRooms);
-        }
-    }
+//    @Override
+//    public void deleteById(Long id) {
+//        MeetingRooms meetingRooms = entityManager.find(MeetingRooms.class, id);
+//        if (meetingRooms != null) {
+//            entityManager.remove(meetingRooms);
+//        }
+//    }
     @Override
     public MeetingRooms findByName(String name) {
         try {

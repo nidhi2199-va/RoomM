@@ -9,5 +9,5 @@ public class UpdateRoomResponseDTO {
     private Long id;
     private String name;
     private int capacity;
-    //private boolean isAvailable;
+
 }

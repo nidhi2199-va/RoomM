@@ -8,5 +8,5 @@ import lombok.Setter;
 public class UpdateRoomRequestDTO {
     private String name;
     private int capacity;
-   private boolean isAvailable;
+
 }
