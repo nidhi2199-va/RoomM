@@ -16,4 +16,5 @@ public interface MeetingRoomsDao {
 
     MeetingRooms findByName(String name);
     Optional<MeetingRooms> findAvailableRoom(LocalDateTime startTime, LocalDateTime endTime, int minCapacity);
+    void softDelete(Long roomId);
 }

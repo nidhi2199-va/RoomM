@@ -26,7 +26,7 @@ public class MeetingRoomsController {
 
     public MeetingRoomsController(MeetingRoomsService meetingRoomsService, MeetingRoomsDao meetingRoomsDao) {
         this.meetingRoomsService = meetingRoomsService;
-      //  this.meetingRoomsDao = meetingRoomsDao;
+        //  this.meetingRoomsDao = meetingRoomsDao;
     }
 
     // Endpoint to add a meeting room (Only Admins)
@@ -41,7 +41,8 @@ public class MeetingRoomsController {
         MeetingRooms meetingRoom = meetingRoomsService.addMeetingRoom(addRoomRequestDTO, jwtToken);
         return ResponseEntity.ok(meetingRoom);
     }
-//    @PutMapping("/room/{roomId}")
+
+    //    @PutMapping("/room/{roomId}")
 //    public ResponseEntity<MeetingRooms> updateMeetingRoom(
 //            @PathVariable Long roomId,
 //            @RequestBody UpdateRoomRequestDTO updateRoomRequestDTO,
@@ -60,6 +61,7 @@ public class MeetingRoomsController {
     public RoomWithTimeSlotsDTO getRoomWithTimeSlots(@PathVariable Long roomId) {
         return meetingRoomsService.getRoomWithTimeSlots(roomId);
     }
+
     @GetMapping("/availability")
     public RoomAvailabilityDTO getAvailableRooms(
             @RequestParam("startTime") String startTime,
@@ -70,11 +72,13 @@ public class MeetingRoomsController {
 
         return meetingRoomsService.getAvailableRoomsForTimeslot(requestedStart, requestedEnd);
     }
+
     @GetMapping("/all")
     public ResponseEntity<List<MeetingRoomsResponseDTO>> getAllMeetingRooms() {
         List<MeetingRoomsResponseDTO> meetingRooms = meetingRoomsService.getAllMeetingRooms();
         return ResponseEntity.ok(meetingRooms);
     }
+
     @PutMapping("/{roomId}")
     public ResponseEntity<UpdateRoomResponseDTO> updateMeetingRoom(
             @PathVariable Long roomId,
@@ -103,6 +107,20 @@ public class MeetingRoomsController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
         }
     }
+    @DeleteMapping
+    public ResponseEntity<DeleteMeetingRoomDTO> deleteRoom(
+            @RequestHeader("Authorization") String token,
+            @RequestBody DeleteMeetingRoomRequestDTO request) {
 
+        // Extract the JWT token (remove "Bearer " prefix)
+        String jwtToken = token.substring(7);
+
+        // Call the service to delete the room using the roomId from the request body
+        meetingRoomsService.deleteRoom(request.getRoomId(), jwtToken);
+
+        // Return a success response
+        DeleteMeetingRoomDTO response = new DeleteMeetingRoomDTO("Room deleted successfully");
+        return ResponseEntity.ok(response);
     }
 
+}

@@ -259,6 +259,7 @@ public class BookingsService {
                 savedBooking.getEndTime(),
                 savedBooking.getStatus()
         );
+
     }
 
 }

@@ -3,12 +3,14 @@ package com.MeetingRoom.RoomM.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.Where;
 
 
 import java.util.List;
 
 @Entity
 @Table(name = "meeting_rooms")
+@Where(clause = "deleted = false") // Automatically filter out deleted rooms
 @Getter
 @Setter
 @NoArgsConstructor
@@ -31,7 +33,8 @@ public class MeetingRooms {
 
     @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Bookings> bookings;
-
+    @Column(name = "deleted", nullable = false)
+    private boolean deleted = false; // Soft delete flag
 
 //   @OneToMany(mappedBy = "user")
 //   private List<Users> user;  // List of users who have access to this room

@@ -197,6 +197,38 @@ public List<MeetingRoomDTO> getAllMeetingRooms(String token) {
                 .map(room -> new MeetingRoomsResponseDTO(room.getId(), room.getName(), room.getCapacity()))
                 .collect(Collectors.toList());
     }
+    public void deleteMeetingRoom(Long roomId, String token) {
+        try {
+            // Extract user role from JWT
+            String role = jwtUtil.extractRole(token);
 
+            // Allow only Admins to delete rooms
+            if (!"ADMIN".equals(role)) {
+                throw new RuntimeException("Access Denied! Only Admins can delete meeting rooms.");
+            }
+
+            // Check if the room exists
+            MeetingRooms meetingRoom = meetingRoomsDao.findById(roomId)
+                    .orElseThrow(() -> new RuntimeException("Meeting room not found with ID: " + roomId));
+
+            // Perform soft delete (set deleted flag to true)
+            meetingRoom.setDeleted(true);
+            meetingRoomsDao.save(meetingRoom);
+
+        } catch (Exception e) {
+            // Log the exception and rethrow it
+            throw new RuntimeException("Failed to delete meeting room: " + e.getMessage(), e);
+        }
+    }
+    public void deleteRoom(Long id, String token) {
+        String role = jwtUtil.extractRole(token);
+
+        // Allow only Admins to add rooms
+        if (!"ADMIN".equals(role)) {
+            System.out.println(role);
+            throw new RuntimeException("Access Denied! Only Admins can add meeting rooms.");
+        }
+        meetingRoomsDao.softDelete(id);
+    }
 
 }

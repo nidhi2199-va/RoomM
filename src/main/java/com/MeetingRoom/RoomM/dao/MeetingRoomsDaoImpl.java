@@ -76,5 +76,14 @@ public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
 
         return availableRooms.stream().findFirst();
     }
+    @Override
+    @Transactional
+    public void softDelete(Long roomId) {
+        MeetingRooms room = entityManager.find(MeetingRooms.class, roomId);
+        if (room != null) {
+            room.setDeleted(true);
+            entityManager.merge(room);
+        }
+    }
 
 }
