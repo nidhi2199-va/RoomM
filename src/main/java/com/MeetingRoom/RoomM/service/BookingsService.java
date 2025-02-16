@@ -259,7 +259,13 @@ public class BookingsService {
                 savedBooking.getEndTime(),
                 savedBooking.getStatus()
         );
-
+//        public void deleteRoom(Long id, String token) {
+//            String role = tokenService.extractRole(token);
+//            if (!"ADMIN".equals(role)) {
+//                throw new UnauthorizedException("Only admins can delete rooms");
+//            }
+//            roomDao.softDelete(id);
+//        }
     }
 
 }

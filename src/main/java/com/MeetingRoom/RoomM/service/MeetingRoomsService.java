@@ -1,5 +1,6 @@
 package com.MeetingRoom.RoomM.service;
 
+import com.MeetingRoom.RoomM.Enums.BookingStatus;
 import com.MeetingRoom.RoomM.Enums.Role;
 import com.MeetingRoom.RoomM.Exceptions.BadRequestException;
 import com.MeetingRoom.RoomM.Exceptions.ResourceNotFoundException;
@@ -172,12 +173,14 @@ public List<MeetingRoomDTO> getAllMeetingRooms(String token) {
 
         MeetingRooms room = roomOptional.get();
 
-        // Fetch all bookings for the room
-        List<Bookings> bookings = bookingsDao.findByMeetingRoomId(roomId);
+        // Fetch all bookings for the room, filtering out canceled bookings
+        List<Bookings> bookings = bookingsDao.findByMeetingRoomId(roomId)
+                .stream()
+                .filter(booking -> booking.getStatus() != BookingStatus.CANCELLED) // Exclude canceled bookings
+                .collect(Collectors.toList());
 
         // Check if the requested time slot overlaps with any existing booking
         for (Bookings booking : bookings) {
-            // Check if the requested timeslot overlaps with any existing booking
             if (isOverlapping(booking.getStartTime(), booking.getEndTime(), requestedStart, requestedEnd)) {
                 return false;  // Room is not available
             }
@@ -185,6 +188,7 @@ public List<MeetingRoomDTO> getAllMeetingRooms(String token) {
 
         return true;  // Room is available
     }
+
 
     // Helper method to check if two time slots overlap
     private boolean isOverlapping(LocalDateTime existingStart, LocalDateTime existingEnd, LocalDateTime requestedStart, LocalDateTime requestedEnd) {
