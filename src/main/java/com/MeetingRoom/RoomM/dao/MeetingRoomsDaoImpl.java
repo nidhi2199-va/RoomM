@@ -32,24 +32,21 @@ public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
             return entityManager.merge(meetingRooms);
         }
     }
-
     @Override
     public Optional<MeetingRooms> findById(Long id) {
-        return Optional.ofNullable(entityManager.find(MeetingRooms.class, id));
-    }
+        MeetingRooms meetingRooms = entityManager.find(MeetingRooms.class, id);
+        if (meetingRooms != null && !meetingRooms.isDeleted()) {
+            return Optional.of(meetingRooms);
+        } else {
+            return Optional.empty();
+        }
 
+    }
     @Override
     public List<MeetingRooms> findAll() {
         return entityManager.createQuery("SELECT m FROM MeetingRooms m", MeetingRooms.class).getResultList();
     }
 
-//    @Override
-//    public void deleteById(Long id) {
-//        MeetingRooms meetingRooms = entityManager.find(MeetingRooms.class, id);
-//        if (meetingRooms != null) {
-//            entityManager.remove(meetingRooms);
-//        }
-//    }
     @Override
     public MeetingRooms findByName(String name) {
         try {
@@ -85,5 +82,9 @@ public class MeetingRoomsDaoImpl implements MeetingRoomsDao {
             entityManager.merge(room);
         }
     }
-
+    @Override
+    public List<MeetingRooms> findAllActiveRooms() {
+        String jpql = "SELECT r FROM MeetingRooms r WHERE r.deleted = false";
+        return entityManager.createQuery(jpql, MeetingRooms.class).getResultList();
+    }
 }

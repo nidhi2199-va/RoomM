@@ -3,6 +3,7 @@ import com.MeetingRoom.RoomM.Enums.BookingStatus;
 import jakarta.persistence.Entity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -29,7 +30,10 @@ public class Bookings {
     @JoinColumn(name = "room_id", nullable = false)
     private MeetingRooms room;
 
+    @DateTimeFormat(pattern = "HH:mm:ss")
     private LocalDateTime startTime;
+
+    @DateTimeFormat(pattern = "HH:mm:ss")
     private LocalDateTime endTime;
 
     @Enumerated(EnumType.STRING)

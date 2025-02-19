@@ -62,7 +62,6 @@ public class BookingsController {
         return ResponseEntity.ok(bookingService.getAllBookingHistory(statuses));
     }
 
-
     @GetMapping("/history/user")
     public ResponseEntity<?> getUserBookingHistory(@RequestHeader(HttpHeaders.AUTHORIZATION) String token) {
         try {
@@ -102,11 +101,7 @@ public class BookingsController {
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(Map.of("error", "Booking ID is required"));
             }
-
-            // Extract token without "Bearer " prefix
             String jwtToken = token.replace("Bearer ", "");
-
-            // Call the service method to cancel the booking
             bookingService.cancelBooking(bookingId, jwtToken);
 
             return ResponseEntity.ok(Map.of("message", "Booking canceled successfully!"));
@@ -117,7 +112,6 @@ public class BookingsController {
                     .body(Map.of("error", "An unexpected error occurred!"));
         }
     }
-
     @PutMapping("/{bookingId}")
     public ResponseEntity<UpdateBookingResponseDTO> updateBooking(@PathVariable Long bookingId, @RequestBody UpdateBookingRequestDTO bookingRequestDTO) {
         UpdateBookingResponseDTO updatedBooking = bookingService.updateBooking(bookingId, bookingRequestDTO);

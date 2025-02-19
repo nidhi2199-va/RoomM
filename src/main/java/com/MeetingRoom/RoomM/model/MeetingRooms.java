@@ -10,7 +10,6 @@ import java.util.List;
 
 @Entity
 @Table(name = "meeting_rooms")
-@Where(clause = "deleted = false") // Automatically filter out deleted rooms
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,12 +25,7 @@ public class MeetingRooms {
 
     private int capacity;  // Room capacity
 
-//       @ElementCollection
-//      @CollectionTable(name = "room_equipment", joinColumns = @JoinColumn(name = "room_id"))
-//      @Column(name = "equipment")
-//      private List<String> equipmentList;  // List of equipment available in the room (Projector, Whiteboard, etc.)
-
-    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "room", cascade = CascadeType.ALL)
     private List<Bookings> bookings;
     @Column(name = "deleted", nullable = false)
     private boolean deleted = false; // Soft delete flag

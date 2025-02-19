@@ -31,19 +31,16 @@ public class BookingsDaoImpl implements BookingsDao {
     }
     @Override
     public List<Bookings> findByStatusAndEndTimeBefore(BookingStatus status, LocalDateTime currentTime) {
-        // Write the custom query using entityManager if needed
         String query = "SELECT b FROM Bookings b WHERE b.status = :status AND b.endTime < :currentTime";
         return entityManager.createQuery(query, Bookings.class)
                 .setParameter("status", status)
                 .setParameter("currentTime", currentTime)
                 .getResultList();
     }
-
     @Override
     public Optional<Bookings> findById(Long id) {
         return Optional.ofNullable(entityManager.find(Bookings.class, id));
     }
-
     @Override
     public void deleteById(Long id) {
         Bookings booking = entityManager.find(Bookings.class, id);
@@ -51,7 +48,6 @@ public class BookingsDaoImpl implements BookingsDao {
             entityManager.remove(booking);
         }
     }
-
     @Override
     public long countOverlappingBookings(Long roomId, LocalDateTime startTime, LocalDateTime endTime) {
         String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId " +
@@ -64,21 +60,18 @@ public class BookingsDaoImpl implements BookingsDao {
                 .setParameter("endTime", endTime)
                 .getSingleResult();
     }
-
     @Override
     public List<Bookings> findByUserId(Long userId) {
         return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.user.id = :userId", Bookings.class)
                 .setParameter("userId", userId)
                 .getResultList();
     }
-
     @Override
     public List<Bookings> findByMeetingRoomId(Long roomId) {
         return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.room.id = :roomId", Bookings.class)
                 .setParameter("roomId", roomId)
                 .getResultList();
     }
-
     @Override
     public List<Bookings> findByStatus(BookingStatus status) {
         return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.status = :status", Bookings.class)
@@ -86,21 +79,14 @@ public class BookingsDaoImpl implements BookingsDao {
                 .getResultList();
     }
 
-//    @Override
-//    public List<Bookings> findBookingsWithinTimeRange(LocalDateTime startTime, LocalDateTime endTime) {
-//        return entityManager.createQuery("SELECT b FROM Bookings b WHERE b.startTime >= :startTime AND b.endTime <= :endTime", Bookings.class)
-//                .setParameter("startTime", startTime)
-//                .setParameter("endTime", endTime)
-//                .getResultList();
-//    }
-    @Override
-    public List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status) {
-        String jpql = "SELECT b FROM Bookings b WHERE b.room = :room AND b.status = :status";
-        TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
-        query.setParameter("room", room);
-        query.setParameter("status", status);
-        return query.getResultList();
-    }
+@Override
+public List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status1, BookingStatus status2) {
+    String jpql = "SELECT b FROM Bookings b WHERE b.room = :room AND b.status IN (:statuses)";
+    TypedQuery<Bookings> query = entityManager.createQuery(jpql, Bookings.class);
+    query.setParameter("room", room);
+    query.setParameter("statuses", List.of(status1, status2)); // Use a list for multiple statuses
+    return query.getResultList();
+}
     @Override
     public List<Bookings> findByStatusIn(List<BookingStatus> statuses) {
         String jpql = "SELECT b FROM Bookings b WHERE b.status IN :statuses";
@@ -108,8 +94,6 @@ public class BookingsDaoImpl implements BookingsDao {
         query.setParameter("statuses", statuses);
         return query.getResultList();
     }
-
-    // Retrieve booking history for a specific user
     @Override
     public List<Bookings> findByUserIdAndStatusIn(Long userId, List<BookingStatus> statuses) {
         String jpql = "SELECT b FROM Bookings b WHERE b.user.id = :userId AND b.status IN :statuses";
@@ -121,9 +105,6 @@ public class BookingsDaoImpl implements BookingsDao {
         System.out.println("Fetched Bookings: " + results); // Debugging log
         return results;
     }
-
-
-    // Retrieve booking history for a specific room
     @Override
     public List<Bookings> findByRoomIdAndStatusIn(Long roomId, List<BookingStatus> statuses) {
         String jpql = "SELECT b FROM Bookings b WHERE b.room.id = :roomId AND b.status IN :statuses";
@@ -136,7 +117,7 @@ public class BookingsDaoImpl implements BookingsDao {
     public List<Bookings> findByRoomAndStatusAndTimeRange(MeetingRooms room, BookingStatus status, LocalDateTime startTime, LocalDateTime endTime) {
         String jpql = "SELECT b FROM Bookings b WHERE b.room = :room " +
                 "AND b.status = :status " +
-                "AND ((b.startTime < :endTime) AND (b.endTime > :startTime))";  // Check for overlapping time slots
+                "AND ((b.startTime <= :endTime) AND (b.endTime >= :startTime))";  // Check for overlapping time slots
 
         return entityManager.createQuery(jpql, Bookings.class)
                 .setParameter("room", room)
@@ -145,12 +126,11 @@ public class BookingsDaoImpl implements BookingsDao {
                 .setParameter("endTime", endTime)
                 .getResultList();
     }
-
     @Override
     public boolean isOverlapping(Long roomId, LocalDateTime startTime, LocalDateTime endTime) {
         String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId " +
                 "AND b.status = 'BOOKED' " +
-                "AND ((b.startTime < :endTime AND b.endTime > :startTime))";
+                "AND ((b.startTime <= :endTime AND b.endTime >= :startTime))";
 
         Long count = entityManager.createQuery(query, Long.class)
                 .setParameter("roomId", roomId)
@@ -160,26 +140,27 @@ public class BookingsDaoImpl implements BookingsDao {
 
         return count > 0;
     }
-    @Override
-    public long countOverlappingBookingsExcludingCurrent(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId) {
-        String query = "SELECT COUNT(b) FROM Bookings b WHERE b.room.id = :roomId AND " +
-                "b.startTime <= :endTime AND b.endTime >= :startTime OR" +
-                ":endTime > b.startTime AND :endTime < b.endTime OR"
-                + ":startTime > b.startTime AND :endTime < b.endTime AND b.id <> :bookingId";
-        return entityManager.createQuery(query, Long.class)
-                .setParameter("roomId", roomId)
-                .setParameter("startTime", startTime)
-                .setParameter("endTime", endTime)
-                .setParameter("bookingId", bookingId)
-                .getSingleResult();
-    }
 
+@Override
+public long countOverlappingBookingsExcludingCurrent(Long roomId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId) {
+    String query = "SELECT COUNT(b) FROM Bookings b " +
+            "WHERE b.room.id = :roomId " + // Filter by room
+            "AND b.id <> :bookingId " + // Exclude the current booking
+            "AND (:startTime <= b.endTime) AND (:endTime >= b.startTime)"; // Overlap condition
+
+    return entityManager.createQuery(query, Long.class)
+            .setParameter("roomId", roomId)
+            .setParameter("startTime", startTime)
+            .setParameter("endTime", endTime)
+            .setParameter("bookingId", bookingId)
+            .getSingleResult();
+}
     @Override
     public long countUserOverlappingBookings(Long userId, LocalDateTime startTime, LocalDateTime endTime, Long bookingId) {
-        String query = "SELECT COUNT(b) FROM Bookings b WHERE b.user.id = :userId AND " +
-                "b.startTime <= :endTime AND b.endTime >= :startTime OR" +
-                ":endTime > b.startTime AND :endTime < b.endTime OR"
-                + ":startTime > b.startTime AND :endTime < b.endTime AND b.id <> :bookingId";
+        String query = "SELECT COUNT(b) FROM Bookings b WHERE b.user.id = :userId " +
+                "AND b.id <> :bookingId " + // ✅ Exclude the current booking
+                "AND (b.startTime <= :endTime AND b.endTime >= :startTime)";
+
         return entityManager.createQuery(query, Long.class)
                 .setParameter("userId", userId)
                 .setParameter("startTime", startTime)
@@ -187,5 +168,6 @@ public class BookingsDaoImpl implements BookingsDao {
                 .setParameter("bookingId", bookingId)
                 .getSingleResult();
     }
-    }
+
+}
 

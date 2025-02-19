@@ -12,9 +12,9 @@ public interface MeetingRoomsDao {
     MeetingRooms save(MeetingRooms meetingRoom);
     Optional<MeetingRooms> findById(Long id);
      List<MeetingRooms> findAll();
-    // Delete a meeting room by ID
-
     MeetingRooms findByName(String name);
     Optional<MeetingRooms> findAvailableRoom(LocalDateTime startTime, LocalDateTime endTime, int minCapacity);
     void softDelete(Long roomId);
+    List<MeetingRooms> findAllActiveRooms();  // Custom method for active rooms
+
 }

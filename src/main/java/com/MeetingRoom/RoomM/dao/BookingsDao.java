@@ -3,13 +3,16 @@ package com.MeetingRoom.RoomM.dao;
 import com.MeetingRoom.RoomM.Enums.BookingStatus;
 import com.MeetingRoom.RoomM.model.Bookings;
 import com.MeetingRoom.RoomM.model.MeetingRooms;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-public interface BookingsDao {
+public interface BookingsDao  {
 
     // Save a booking (either persist or merge based on the ID)
     Bookings save(Bookings booking);
@@ -37,7 +40,7 @@ public interface BookingsDao {
     //List<Bookings> findByMeetingRoomAndStatus(Long roomId, BookingStatus status);
     // Fetch all confirmed bookings whose end time has passed
     List<Bookings> findByStatusAndEndTimeBefore(BookingStatus status, LocalDateTime currentTime);
-    List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status);
+    List<Bookings> findByRoomAndStatus(MeetingRooms room, BookingStatus status1,BookingStatus status2 );
 
     // Retrieve booking history (all completed or canceled bookings)
     List<Bookings> findByStatusIn(List<BookingStatus> statuses);

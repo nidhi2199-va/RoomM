@@ -4,8 +4,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
-@ControllerAdvice
+@RestControllerAdvice
 public class ExceptionHandlerAdvice {
 
     // Handle UserAlreadyExistsException
@@ -16,8 +18,8 @@ public class ExceptionHandlerAdvice {
     }
 
     //Handle InvalidCredentialsException
-    @ExceptionHandler(InvalidCredentialsException.class)
-    public ResponseEntity<Object> handleInvalidCredentials(InvalidCredentialsException ex) {
+    @ExceptionHandler({InvalidCredentialsException.class, AccessDeniedException.class})
+    public ResponseEntity<Object> handleInvalidCredentials(Exception ex) {
         return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);  // Error message shown in the popup
     }
 
