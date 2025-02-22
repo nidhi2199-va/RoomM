@@ -15,8 +15,12 @@ import jakarta.servlet.http.HttpServletRequest;
 @Component
 public class JWTInterceptor implements HandlerInterceptor {
 
+    private final JwtUtil jwtUtil;
+
     @Autowired
-    private JwtUtil jwtUtil;
+    public JWTInterceptor(JwtUtil jwtUtil) {
+        this.jwtUtil = jwtUtil;
+    }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {

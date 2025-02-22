@@ -1,9 +1,12 @@
 package com.meeting.room.utils;
 
 import com.meeting.room.dao.UserDao;
+import com.meeting.room.enums.Role;
+import com.meeting.room.exceptions.UserNotFoundException;
 import com.meeting.room.model.Users;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import org.apache.catalina.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -19,8 +22,11 @@ public class JwtUtil {
 
     @Value("${jwt.secret.key}")
     private String secretKey;
-    @Autowired
-    private UserDao userDao;
+    private final UserDao userDao;
+
+    public JwtUtil(UserDao userDao) {
+        this.userDao = userDao;
+    }
 
     private Key getSigningKey() {
         return Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
@@ -54,10 +60,14 @@ public class JwtUtil {
         return claimsResolver.resolve(claims);
     }
     // Extract the role from the token
-    public String extractRole(String token) {
-        Claims claims = extractClaims(token);
-        return claims.get("role", String.class);  // Extract the role from the token
-
+    public Role extractRole(String token) {
+        String email = extractEmail(token);
+        Optional<Users> user = userDao.findByEmail(email);
+        if (user.isEmpty()) {
+            throw new UserNotFoundException("No user found");
+        } else {
+            return user.get().getRole();
+        }
     }
 
     // Extract any claim from the token

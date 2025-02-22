@@ -1,5 +1,6 @@
 package com.meeting.room.exceptions;
 
+import com.meeting.room.dto.ErrorResponseDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -9,10 +10,11 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class ExceptionHandlerAdvice {
 
     // Handle UserAlreadyExistsException
-    @ExceptionHandler(UserAlreadyExistsException.class)
-    public ResponseEntity<Object> handleUserAlreadyExists(UserAlreadyExistsException ex) {
+    @ExceptionHandler({UserAlreadyExistsException.class, UserNotFoundException.class})
+    public ResponseEntity<ErrorResponseDTO> handleUserAlreadyExists(Exception ex) {
         // Return a response with a custom error message
-        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);  // Error message shown in the popup
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(ex.getMessage(), HttpStatus.BAD_REQUEST.name());
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);  // Error message shown in the popup
     }
 
     //Handle InvalidCredentialsException

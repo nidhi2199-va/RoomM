@@ -40,7 +40,7 @@ public class BookingsServiceImp implements BookingsService {
 
     @Transactional
     @Override
-    public BookingResponseDTO createBooking(BookingRequestDTO bookingRequestDTO, String token) {
+    public BookingResponseDTO  createBooking(BookingRequestDTO bookingRequestDTO, String token) {
         // Extract user from token
         String email = jwtUtil.extractEmail(token);
         Users user = userRepository.findByEmail(email)

@@ -1,6 +1,7 @@
 package com.meeting.room.service;
 
 import com.meeting.room.enums.BookingStatus;
+import com.meeting.room.enums.Role;
 import com.meeting.room.exceptions.AccessDeniedException;
 import com.meeting.room.exceptions.ResourceNotFoundException;
 import com.meeting.room.exceptions.RoomAlreadyExistsException;
@@ -32,9 +33,9 @@ public class MeetingRoomsServiceImp implements MeetingRoomsService {
 
     @Override
     public MeetingRooms addMeetingRoom(AddRoomRequestDTO addRoomRequestDTO, String token) {
-        String role = jwtUtil.extractRole(token);
+        Role role = jwtUtil.extractRole(token);
 
-        if (!"ADMIN".equals(role)) {
+        if (!Role.ADMIN.equals(role)) {
             throw new AccessDeniedException("Access Denied! Only Admins can add meeting rooms.");
         }
 
@@ -52,9 +53,9 @@ public class MeetingRoomsServiceImp implements MeetingRoomsService {
 
     @Override
     public MeetingRooms updateMeetingRoom(Long roomId, UpdateRoomRequestDTO updateRoomRequestDTO, String token) {
-        String role = jwtUtil.extractRole(token);
+        Role role = jwtUtil.extractRole(token);
 
-        if (!"ADMIN".equals(role)) {
+        if (!Role.ADMIN.equals(role)) {
             throw new AccessDeniedException("Access Denied! Only Admins can update meeting rooms.");
         }
 
@@ -76,9 +77,9 @@ public class MeetingRoomsServiceImp implements MeetingRoomsService {
 
     @Override
     public List<MeetingRoomDTO> getAllMeetingRooms(String token) {
-        String role = jwtUtil.extractRole(token);
+        Role role = jwtUtil.extractRole(token);
 
-        if (!"ADMIN".equals(role)) {
+        if (!Role.ADMIN.equals(role)) {
             throw new AccessDeniedException("Access Denied! Only Admins can view meeting rooms.");
         }
 
@@ -138,9 +139,9 @@ public class MeetingRoomsServiceImp implements MeetingRoomsService {
 
     @Override
     public void deleteRoom(Long id, String token) {
-        String role = jwtUtil.extractRole(token);
+        Role role = jwtUtil.extractRole(token);
 
-        if (!"ADMIN".equals(role)) {
+        if (!Role.ADMIN.equals(role)) {
             throw new AccessDeniedException("Access Denied! Only Admins can delete meeting rooms.");
         }
 

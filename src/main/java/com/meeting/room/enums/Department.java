@@ -5,5 +5,6 @@ public enum Department {
     HR,
     SALES,
     OPERATIONS,
-    IT
+    IT,
+    CX
 }
