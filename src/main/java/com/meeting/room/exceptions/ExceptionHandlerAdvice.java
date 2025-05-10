@@ -1,0 +1,46 @@
+package com.meeting.room.exceptions;
+
+import com.meeting.room.dto.ErrorResponseDTO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+@RestControllerAdvice
+public class ExceptionHandlerAdvice {
+
+    // Handle UserAlreadyExistsException
+    @ExceptionHandler({UserAlreadyExistsException.class, UserNotFoundException.class})
+    public ResponseEntity<ErrorResponseDTO> handleUserAlreadyExists(Exception ex) {
+        // Return a response with a custom error message
+        ErrorResponseDTO errorResponseDTO = new ErrorResponseDTO(ex.getMessage(), HttpStatus.BAD_REQUEST.name());
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);  // Error message shown in the popup
+    }
+
+    //Handle InvalidCredentialsException
+    @ExceptionHandler({InvalidCredentialsException.class, AccessDeniedException.class})
+    public ResponseEntity<Object> handleInvalidCredentials(Exception ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.UNAUTHORIZED);  // Error message shown in the popup
+    }
+
+    @ExceptionHandler(RoomAlreadyExistsException.class)
+    public ResponseEntity<Object> handleRoomAlreadyExists(RoomAlreadyExistsException ex) {
+        // Return a response with a custom error message when room already exists
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);  // Error message shown in the popup
+    }
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<Object> handleResourceNotFound(ResourceNotFoundException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    public ResponseEntity<Object> handleBadRequest(BadRequestException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.BAD_REQUEST);
+    }
+    @ExceptionHandler(ConflictException.class)
+    public ResponseEntity<Object> handleConflict(ConflictException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+}
+
+
